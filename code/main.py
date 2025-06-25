@@ -235,6 +235,8 @@ def validateSchedule(handle, showBookings, showLessons):
 
 
 
+
+
 # abstract functions that group utility functions together
 def tryAddLesson(date, time, duration, building, room, rate,
                     name, pronouns, handle):
@@ -366,7 +368,7 @@ async def schedule(ctx, showBookings, showLessons, showPast):
     result = tryGetSchedule(ctx.author.id, showBookings, showLessons, showPast)
     s = ''
     for key in result.keys:
-        s += str(key) + ':\n\n'
+        s += str(key) + ':\n\n\n'
         for lesson in result[f'{key}']:
             s += 'Date: ' + str(lesson['Date']) + '\tTime: ' + str(lesson['Time'])
             s += 'Location: ' + str(lesson['Building Name']) + ' ' + str(lesson['Room Number'])

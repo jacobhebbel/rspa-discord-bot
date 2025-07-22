@@ -1,5 +1,5 @@
 from flask import Flask, redirect, url_for, request
-import utils as util
+import roomAssignment
 
 server = Flask(__name__)
 
@@ -8,11 +8,11 @@ def receiveAndProcessLesson():
     data = request.get_json()
     lesson = data['lesson']
 
-    result = util.validateLesson(lesson)
+    result = roomAssignment.validateLesson(lesson)
     if result['validated'] == False:
         return f'Fields missing and/or unformatted {result['missingFields']}', 400
     
-    succeeded = util.processNewLesson(lesson)
+    succeeded = roomAssignment.processNewLesson(lesson)
     if succeeded == True:
         return f'Lesson was added with status: {lesson['status']}', 200
     else:

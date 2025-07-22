@@ -1,44 +1,4 @@
-from pymongo import MongoClient
-from datetime import datetime, time
-import os
-db = None
-status = {
-    'pending': 0,
-    'conflicted': 1,
-    'secured': 2,
-    'incompatible': 3,
-    'booked': 4,
-    'past': 5,
-    'paid': 6
-}
-
-def setClient():
-    mongoClient = MongoClient(os.getenv('DB'))
-    global db
-    db = mongoClient['scheduling']
-
-def lessonToDateTime(lesson):
-
-    # assume a formatting function is applied to the lesson variable
-    # when the object passes the validation function (happens prior in execution)
-    lessonDate = lesson['date'].split('/')
-    lessonTime = lesson['time'].split(':')
-    
-    if len(lessonDate) != 3 or len(lessonTime) != 2:
-        raise Exception("Lesson date/time arguments are not initialized")
-    
-    return datetime(lessonDate[2], lessonDate[0], lessonDate[1], lessonTime[0], lessonTime[1], 0)
-
-def lessonsConflict(lessonA, lessonB):
-
-    # uses datetime objects to intuitively compare events 
-    datetimeA, datetimeB = lessonToDateTime(lessonA), lessonToDateTime(lessonB)
-    durationA = time(minute=60) if lessonA['isFullHour'] else time(minute=30)
-    durationB = time(minute=60) if lessonB['isFullHour'] else time(minute=30)
-                                                                                    
-                                                                                    # ensures A doesn't bleed into B's start
-    return datetimeA + durationA > datetimeB or datetimeB + durationB > datetimeA   # and that B doesn't bleed into A's start
-    
+import util
 
 """
 Each request that comes in can be processed sequentially: validate, then observe if there are any date-time conflicts
@@ -47,14 +7,11 @@ Then I need to check for any date-time conflicts with each room. If one exists, 
 
 def processNewLesson(newLesson):
 
-    global db
-    if db is None: # connects to the database
-        setClient()
-    
-    existingLessons = db['lessons'].find()
+    db = util.getDatabaseConnection(collection='lessons')
+    existingLessons = db.find()
     doesConflict = False
     for lesson in existingLessons:  # checks every existing lesson for a time conflict
-        if lessonsConflict(newLesson, lesson):
+        if util.lessonsConflict(newLesson, lesson):
             doesConflict = True
             break
     
@@ -86,6 +43,10 @@ def validateLesson(lesson):
     validateDate(lesson, missingFields)
     validateTime(lesson, missingFields)
 
+    if missingFields != []:
+        result['validated'] = False
+        result['missingFields'] = missingFields
+
     formatLesson(lesson)
     return result
 
@@ -93,17 +54,17 @@ def validateDate(lesson, missingFields):
     date = lesson['date']
     date = date.split('/')
     if len(date) != 3:
-        missingFields = [date]
+        missingFields.append('date')
         return
     
     if len(date[0]) != 2 or int(date[0]) > 12 or int(date[0]) < 1:
-        missingFields = ['date']
+        missingFields.append('date')
     
     if len(date[1]) != 2 or int(date[1]) > 31 or int(date[1]) < 1:
-        missingFields = ['date']
+        missingFields.append('date')
     
     if len(date[2]) != 4 or int(date[2]) < 2025:
-        missingFields = ['date']
+        missingFields.append('date')
 
     return
 
@@ -111,34 +72,22 @@ def validateTime(lesson, missingFields):
     time = lesson['time']
     time = time.split(':')
     if len(time) != 2:
-        missingFields = ['time']
+        missingFields.append('time')
         return
     
     if len(time[0]) != 2 or int(time[0]) > 24 or int(time[0]) < 0:
-        missingFields = ['time']
+        missingFields.append('time')
     
     if len(time[1]) != 2 or int(time[1]) > 59 or int(time[1]) < 0:
-        missingFields = ['time']
-
-    return 
+        missingFields.append('time')
+    
+    return
 
 """set lesson fields and update date/time fields"""
 def formatLesson(lesson):
     
-    global status
+    status = util.status
     # fields that need to be added
-    lesson.update({'teacherId': getTeacherFromDiscord(lesson['discord'])})
+    lesson.update({'teacherId': util.getTeacherFromDiscord(lesson['discord'])})
     lesson.update({'status': status['pending']})
     lesson.update({'studentId': 0})
-
-
-"""performs a findOne on db for a matching handle in teachers collection"""
-def getTeacherFromDiscord(handle):
-    
-    global db
-    if db is None:
-        setClient()
-
-    filter = {'discord': handle}
-    id = db['teachers'].find_one(filter).id
-    return id

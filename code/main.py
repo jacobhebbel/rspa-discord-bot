@@ -1,12 +1,12 @@
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from random import randint
 import discord
 import gspread
 import os
-
-from dotenv import load_dotenv
-load_dotenv(override=True)
 
 
 def getSheetsClient():

@@ -1,5 +1,5 @@
 from flask import Flask, redirect, url_for, request
-import * as util from utils
+import utils as util
 
 server = Flask(__name__)
 

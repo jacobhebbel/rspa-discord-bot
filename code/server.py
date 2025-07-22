@@ -17,4 +17,31 @@ def receiveAndProcessLesson():
         return f'Lesson was added with status: {lesson['status']}', 200
     else:
         return 'Lesson failed to be added, try again', 500
-    
+
+@server.route('/cancelLesson', methods=['GET'])
+def cancelLesson():
+    raise NotImplementedError
+
+@server.route('/addBooking', methods=['POST'])
+def addBooking():
+    raise NotImplementedError
+
+@server.route('/cancelBooking', methods=['GET'])
+def cancelBooking():
+    raise NotImplementedError
+
+@server.route('/availableRooms', methods=['GET'])
+def getAvailableRoomData():
+    raise NotImplementedError
+
+@server.route('/availableBookings', methods=['GET'])
+def getAvailableBookingsData():
+    raise NotImplementedError
+
+@server.route('/myBookings', methods=['GET'])
+def getUserBookings():
+    raise NotImplementedError
+
+@server.route('/myLessons', methods=['GET'])
+def getUserLessons():
+    raise NotImplementedError

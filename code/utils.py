@@ -13,7 +13,7 @@ status = {
 }
 
 def setClient():
-    mongoClient = os.getenv('DB')
+    mongoClient = MongoClient(os.getenv('DB'))
     global db
     db = mongoClient['scheduling']
 

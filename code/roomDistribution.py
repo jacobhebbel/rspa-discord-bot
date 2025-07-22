@@ -29,7 +29,7 @@ def distributeConflictedLessons(availableRooms):
     for lesson in conflictedLessons:
 
         # available room
-        room = findRoomForLesson(lesson)
+        room = findRoomForLesson(lesson, availableRooms)
 
         if room is None:
             raise NotImplementedError

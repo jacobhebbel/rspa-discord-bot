@@ -9,10 +9,10 @@ def receiveAndProcessLesson():
     lesson = data['lesson']
 
     result = util.validateLesson(lesson)
-    if result.validated == False:
-        return f'Missing required fields {result.fields}', 400
+    if result['validated'] == False:
+        return f'Missing required fields {result['missingFields']}', 400
     
-    succeeded = util.processLesson(lesson)
+    succeeded = util.processNewLesson(lesson)
     if succeeded == True:
         return f'Lesson was added with status: {lesson['status']}', 200
     else:

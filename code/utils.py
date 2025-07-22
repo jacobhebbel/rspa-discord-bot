@@ -2,6 +2,15 @@ from pymongo import MongoClient
 from datetime import datetime, time
 import os
 db = None
+status = {
+    'pending': 0,
+    'conflicted': 1,
+    'secured': 2,
+    'incompatible': 3,
+    'booked': 4,
+    'past': 5,
+    'paid': 6
+}
 
 def setClient():
     mongoClient = os.getenv('DB')
@@ -53,3 +62,46 @@ def processNewLesson(newLesson):
     id = db['lessons'].insert_one(lesson).inserted_id
 
     return id is not None   # returns True / False based on if the id exists (if exists implies operation succeeded)
+
+"""
+Validates a lesson that it has certain fields initialized. Re-formats from a human-friendly format to a machine-friendly one
+"""
+def validateLesson(lesson):
+
+    result = {'validated': True, 'missingFields': []}
+
+    requiredFields = ['discord', 'date', 'time', 'isMonthly', 'isFullHour', 'building', 'room']
+    lessonFields = lesson.keys()
+
+    missingFields = []
+    for field in requiredFields:
+        if field not in lessonFields:
+            missingFields.append(field)
+
+    if missingFields != []:
+        result['validated'] = False
+        result['missingFields'] = missingFields
+        return result
+
+    formatLesson(lesson)
+    return result
+
+"""set lesson fields and update date/time fields"""
+def formatLesson(lesson):
+    
+    global status
+    # fields that need to be added
+    lesson.update({'teacherId': getTeacherFromDiscord(lesson['discord'])})
+    lesson.update({'status': status['pending']})
+    lesson.update({'studentId': 0})
+
+"""performs a findOne on db for a matching handle in teachers collection"""
+def getTeacherFromDiscord(handle):
+    
+    global db
+    if db is None:
+        setClient()
+
+    filter = {'discord': handle}
+    id = db['teachers'].find_one(filter).id
+    return id

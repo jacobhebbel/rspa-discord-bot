@@ -82,9 +82,45 @@ def validateLesson(lesson):
         result['validated'] = False
         result['missingFields'] = missingFields
         return result
+    
+    validateDate(lesson, missingFields)
+    validateTime(lesson, missingFields)
 
     formatLesson(lesson)
     return result
+
+def validateDate(lesson, missingFields):
+    date = lesson['date']
+    date = date.split('/')
+    if len(date) != 3:
+        missingFields = [date]
+        return
+    
+    if len(date[0]) != 2 or int(date[0]) > 12 or int(date[0]) < 1:
+        missingFields = ['date']
+    
+    if len(date[1]) != 2 or int(date[1]) > 31 or int(date[1]) < 1:
+        missingFields = ['date']
+    
+    if len(date[2]) != 4 or int(date[2]) < 2025:
+        missingFields = ['date']
+
+    return
+
+def validateTime(lesson, missingFields):
+    time = lesson['time']
+    time = time.split(':')
+    if len(time) != 2:
+        missingFields = ['time']
+        return
+    
+    if len(time[0]) != 2 or int(time[0]) > 24 or int(time[0]) < 0:
+        missingFields = ['time']
+    
+    if len(time[1]) != 2 or int(time[1]) > 59 or int(time[1]) < 0:
+        missingFields = ['time']
+
+    return 
 
 """set lesson fields and update date/time fields"""
 def formatLesson(lesson):
@@ -94,6 +130,7 @@ def formatLesson(lesson):
     lesson.update({'teacherId': getTeacherFromDiscord(lesson['discord'])})
     lesson.update({'status': status['pending']})
     lesson.update({'studentId': 0})
+
 
 """performs a findOne on db for a matching handle in teachers collection"""
 def getTeacherFromDiscord(handle):

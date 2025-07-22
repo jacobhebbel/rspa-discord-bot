@@ -10,7 +10,7 @@ def receiveAndProcessLesson():
 
     result = util.validateLesson(lesson)
     if result['validated'] == False:
-        return f'Missing required fields {result['missingFields']}', 400
+        return f'Fields missing and/or unformatted {result['missingFields']}', 400
     
     succeeded = util.processNewLesson(lesson)
     if succeeded == True:

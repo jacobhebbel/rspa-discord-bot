@@ -40,6 +40,14 @@ def getAvailableBookingsData():
 
 @server.route('/myBookings', methods=['GET'])
 def getUserBookings():
+    # 1. pull user info from request; discord bot has already verified role permissions
+    # 2. get user's entry from the 'students' collection in mongo
+    # 3. if they're blacklisted, respond that they aren't eligible for lessons and have to contact eboard
+    # 4. using their id pull all lessons matching that id
+    # 5. breaking this data down is now subjective, but it can be organized by the lesson's status & date
+    # 5. -> lesson date is useful to know 'when' their lesson is
+    # 5. -> lesson status helps them know if they still need to pay for it
+    # 5. -> most important fields: location, teacher, price, date & time, duration, status 
     raise NotImplementedError
 
 @server.route('/myLessons', methods=['GET'])

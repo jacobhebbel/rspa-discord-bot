@@ -59,14 +59,15 @@ def distributeConflictedLessons():
 
 def distributeSecuredLessons():
 
-    securedLessons = getLessons(filter={'status': util.status['secured'], 'building': ''})
+    securedLessons = util.getLessons(filter={'status': util.status['secured'], 'building': ''})
     # plan: use a greedy algorithm for simple lesson distribution (guaranteed to work bc all lessons matching the filter don't conflict with each other)
     # optimizations for evenly distributing room use: 
     # -> make a variable Map[time][duration] = [available rooms] for a time complexity optimization
     # -> count the hours of use remaining per day in each room; try to minimze variance of use across rooms
     # -> distribute bigger lessons first bc they're harder to place
     # -> count number of room uses in a day as another way to break ties
-
+    
+    
     """
     Ideal implementation: can index a date and time then see which rooms are mapped to it
 
@@ -78,16 +79,19 @@ def distributeSecuredLessons():
                                 building: {}
                             }
     """
-    dateToAvailability = util.getDateToAvailabilityTable()
+    availability = util.makeAvailabilityTable()
     for lesson in securedLessons:
 
         lessonDatetime = util.lessonToDateTime(lesson)
-        availableRooms = dateToAvailability[lessonDatetime.date()]
+        availableRooms = availability[lessonDatetime.date()]
 
+        # initializing the load balancer with availability specific to this lesson's date
         balancer = LoadBalancer()
-        for room in availableRooms:
-            roomAvailability = sum(duration for duration in room.values())
-            balancer.insert(room, roomAvailability)
+        for room, availability in availableRooms:
+            totalHoursAvailable = sum(duration for _, duration in availability)
+            balancer.insert(room, totalHoursAvailable)
+        
+
     
     
     raise NotImplementedError

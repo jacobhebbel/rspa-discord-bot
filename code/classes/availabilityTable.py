@@ -15,12 +15,13 @@ class AvailabilityTable:
 
     def __getitem__(self, index):
         # index value is a tuple with a start time and duration
-        if not isinstance(index, datetime):
+        if not (isinstance(index, datetime) or isinstance(index, datetime.date)):
             raise TypeError('Availability Table\'s first index must be a datetime object')
         
+        if isinstance(index, datetime.date):
+            return self.data[index] if index in self.data.keys() else []
+        
         return AvailabilityQuery(self.data, index)
-
-        # represents the rooms available on this day
         
         
 class AvailabilityQuery:
@@ -30,6 +31,10 @@ class AvailabilityQuery:
         self.datetime = index
     
     def __getitem__(self, index):
+        
+        # for accessing room data for a specific day, and keeping the time slot structure
+        if index is None:
+            return self.data[self.datetime.date()]
         
         if not isinstance(index, datetime.time):
             raise TypeError('Availability Table\'s second index must be a time object')
@@ -46,6 +51,4 @@ class AvailabilityQuery:
                     break
 
         return availableRooms
-        
-
 

@@ -39,6 +39,9 @@ def lessonToDateTime(lesson):
     
     return datetime(lessonDate[2], lessonDate[0], lessonDate[1], lessonTime[0], lessonTime[1], 0)
 
+def lessonDurationToTime(duration):
+    return datetime.time(duration)
+
 def lessonsConflict(lessonA, lessonB):
 
     # uses datetime objects to intuitively compare events 

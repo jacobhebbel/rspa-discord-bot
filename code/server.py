@@ -58,3 +58,15 @@ def getUserLessons():
     # 4. organize the response into a visually-appealing format
     # 4. -> possible sections: "upcoming", "unpaid", "this week", "recent status change"
     raise NotImplementedError
+
+@server.route('/uploadSchedule', methods=['POST'])
+def uploadScheduleData():
+    data = request.get_json()
+    schedule = data['schedule']
+
+    # 1. reformat this data to be ready for db insertion
+    # 2. insert this data into the database as a new document for each date
+    # 3. give room assignments for conflicted lessons
+    # 4. notify every teacher in this pool of their lesson's updated status
+    # 5. distribute room assignments for secured lessons
+    # 6. notify every teacher in this pool of their lesson's new room assignment

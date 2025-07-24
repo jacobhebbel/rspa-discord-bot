@@ -4,18 +4,17 @@ import util
 Each request that comes in can be processed sequentially: validate, then observe if there are any date-time conflicts
 Then I need to check for any date-time conflicts with each room. If one exists, insert into db with status "conflicted": else status is "secured"
 """
-
 def processNewLesson(newLesson):
 
     db = util.getDatabaseConnection(collection='lessons')
-    existingLessons = db.find()
+    existingLessons = util.getLessons(filter={'status': util.status['secured']})
     doesConflict = False
     for lesson in existingLessons:  # checks every existing lesson for a time conflict
         if util.lessonsConflict(newLesson, lesson):
             doesConflict = True
             break
     
-    lesson['status'] = 'conflicted' if doesConflict else 'secured'  # sets status based on flag
+    lesson['status'] = util.status['conflicted'] if doesConflict else util.status['secured']  # sets status based on flag
     id = db['lessons'].insert_one(lesson).inserted_id
 
     return id is not None   # returns True / False based on if the id exists (if exists implies operation succeeded)
@@ -86,8 +85,7 @@ def validateTime(lesson, missingFields):
 """set lesson fields and update date/time fields"""
 def formatLesson(lesson):
     
-    status = util.status
     # fields that need to be added
     lesson.update({'teacherId': util.getTeacherFromDiscord(lesson['discord'])})
-    lesson.update({'status': status['pending']})
+    lesson.update({'status': util.status['pending']})
     lesson.update({'studentId': 0})

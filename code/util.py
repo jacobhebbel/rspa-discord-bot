@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from datetime import datetime, time
+from classes.availabilityTable import AvailabilityTable
 import os
 
 db = None
@@ -58,3 +59,12 @@ def getTeacherFromDiscord(handle):
     filter = {'discord': handle}
     id = db['teachers'].find_one(filter).id
     return id
+
+def getLessons(filter):
+    db = getDatabaseConnection('lessons')
+    return db.find(filter)
+
+def makeAvailabilityTable():
+    db = getDatabaseConnection('rooms')
+    data = db.find()
+    return AvailabilityTable(data)

@@ -20,22 +20,51 @@ def receiveAndProcessLesson():
 
 @server.route('/cancelLesson', methods=['GET'])
 def cancelLesson():
+    # 1. pull user info from request and get their mongo doc from the 'teachers' collection
+    # 2. if they're blacklisted, inform them that they cannot interact with the program until they meen with eboard
+    # 3. if the lesson id doesn't match anything, tell them the id didn't match an existing lesson
+    # 4. cancel the lesson and update mongodb
+    # 5. affirm that the lesson was cancelled
+    # 6. if the lesson was booked, inform the student unless the date of the lesson had already passed 
     raise NotImplementedError
 
 @server.route('/addBooking', methods=['POST'])
 def addBooking():
+    # 1. pull user info from request and get their mongo doc from the 'teachers' collection
+    # 2. if they're blacklisted, inform them that they cannot interact with the program until they meen with eboard
+    # 3. if the id doesn't match an existing lesson, inform the user that the id didn't match anything
+    # 4. if the id matches an already booked / past lesson inform the user that this lesson is unable to be booked
+    # 5. else, book the lesson and update mongo
+    # 6. respond to the user that the lesson was booked
+    # 7. notify the teacher that the lesson was booked
     raise NotImplementedError
 
 @server.route('/cancelBooking', methods=['GET'])
 def cancelBooking():
+    # 1. pull user info from request and get their mongo doc from the 'teachers' collection
+    # 2. if they're blacklisted, inform them that they cannot interact with the program until they meen with eboard
+    # 3. if the booking id doesn't match an existing entry, tell the user that the entry doesn't exist
+    # 4. if the booking has already happened, inform the user that bookings cannot be cancelled after they happen
+    # 5. if the booking happens that day, inform the user that bookings cannot be cancelled day of and that they should ask the teacher to pull the lesson
+    # 6. else, cancel it
+    # 7. respond to the command affirming the booking was cancelled
+    # 8. inform the teacher the student cancelled the booking
     raise NotImplementedError
 
 @server.route('/availableRooms', methods=['GET'])
 def getAvailableRoomData():
+    # 1. pull user info from request and get their mongo doc from the 'teachers' collection
+    # 2. if they're blacklisted, inform them that they cannot interact with the program until they meen with eboard
+    # 3. pull all the documents from the 'rooms' collection, filter by date.
+    # 4. respond in a visually-appealing format, maybe with an image file?
     raise NotImplementedError
 
 @server.route('/availableBookings', methods=['GET'])
 def getAvailableBookingsData():
+    # 1. pull user info from request and get their mongo doc from the 'students' collection
+    # 2. if they're blacklisted, inform them that they cannot interact with the program until they meet with eboard
+    # 3. pull all docs in the lessons collection and filter out: past lessons, lessons within 1 week of NOW(), lessons with assigned students
+    # 4. organize this information into a visually appealing format, possible image of a calendar? mention teacher info & rate, lesson length, date & time
     raise NotImplementedError
 
 @server.route('/myBookings', methods=['GET'])

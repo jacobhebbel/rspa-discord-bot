@@ -44,4 +44,9 @@ def getUserBookings():
 
 @server.route('/myLessons', methods=['GET'])
 def getUserLessons():
+    # 1. pull discord handle and get their mongo entry from the 'teachers' collection
+    # 2. if they're blacklisted, notify them that they're ineligible to give lessons and must contact eboard
+    # 3. use their teacher id to pull all lesson docs from the 'lessons' collection
+    # 4. organize the response into a visually-appealing format
+    # 4. -> possible sections: "upcoming", "unpaid", "this week", "recent status change"
     raise NotImplementedError

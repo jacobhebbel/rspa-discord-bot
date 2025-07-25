@@ -4,7 +4,7 @@ import util
 Each request that comes in can be processed sequentially: validate, then observe if there are any date-time conflicts
 Then I need to check for any date-time conflicts with each room. If one exists, insert into db with status "conflicted": else status is "secured"
 """
-def processNewLesson(newLesson):
+def processIncomingLesson(newLesson):
 
     db = util.getDatabaseConnection(collection='lessons')
     existingLessons = util.getLessons(filter={'status': util.status['secured']})

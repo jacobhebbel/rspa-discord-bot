@@ -1,97 +1,79 @@
-from datetime import time
-from classes.loadBalancer import LoadBalancer
-from classes.availabilityTable import AvailabilityTable
 import util
 
-def findRoomForLesson(lesson, availability):
+def assignLessonsToRooms(lessonToRoom):
+    for lesson, roomTuple in lessonToRoom.items():
+        
+        # at this point in the program, the lesson object has already been preprocessed
+        # all we have to do is set the room assignment in lesson and update the date document corresponding to lesson
+        # Additionally, update lesson's status to confirmed
 
-    # getting datetime objects from lessons for intuitive comparisons
-    lessonDatetime = util.lessonToDateTime(lesson)
-    lessonDate, lessonStart = lessonDatetime.date(), lessonDatetime.time()
-    lessonDuration = time(minute=60) if lesson['isFullHour'] else time(minute=30)
-    
-    openRoom = None
-    datesWithAvailability = dateToAvailability.keys()
-    if lessonDate not in datesWithAvailability:
-        return None
-    
-    for room in dateToAvailability[lessonDate]:
-        for openingStart, openingDuration in room:
-            # start time and duration of an opening for a given room
-            
-            if openingStart < lessonStart and openingDuration > lessonDuration:
-                # means the room has an availability that covers the lesson start and duration
-
-                # updating availableRooms to block out this lesson
-                timeUntilLessonStart = lessonStart - openingStart
-                timeAfterLessonEnd = openingDuration - lessonDuration
-
-                # update the table
-                room.update({openingStart: timeUntilLessonStart})
-                room.update({lessonStart + lessonDuration: timeAfterLessonEnd})
-                
-                openRoom = room
-                break
-    
-    return openRoom
+        building, room = roomTuple
+        lesson['building'], lesson['room'] = building, room
+        lesson['status'] = util.status['confirmed']
 
 def distributeConflictedLessons():
 
     conflictedLessons = util.getLessons(filter={'status': util.status['conflicted']})
     availability = util.makeAvailabilityTable()
+    lessonToRoom = {}
 
     for lesson in conflictedLessons:
 
         lessonDatetime = util.lessonToDateTime(lesson)
-        lessonDuration = util.lessonDurationToDateTime(lesson)
-        # available room
+        lessonDuration = util.lessonDurationToTime(lesson)
+        
+        # available rooms
         rooms = availability[lessonDatetime][lessonDuration]
 
         if rooms == []:
-            raise NotImplementedError
-            # alert teacher that their lesson could not be secured; send future availability
-            # update lesson status to incompatible in database
+            lessonToRoom.insert({lesson: None})
 
         else:
-            raise NotImplementedError
-            # alert teacher that their lesson was secured
-            # update lesson status to secured, assign room to lesson, update database
+            assignedRoom = rooms[0]
+            availability.blockSlot(lesson, assignedRoom)
+            lessonToRoom.insert({lesson: assignedRoom})
+
+    return lessonToRoom
+
+        
 
 def distributeSecuredLessons():
 
     securedLessons = util.getLessons(filter={'status': util.status['secured'], 'building': ''})
-    # plan: use a greedy algorithm for simple lesson distribution (guaranteed to work bc all lessons matching the filter don't conflict with each other)
-    # optimizations for evenly distributing room use: 
-    # -> make a variable Map[time][duration] = [available rooms] for a time complexity optimization
-    # -> count the hours of use remaining per day in each room; try to minimze variance of use across rooms
-    # -> distribute bigger lessons first bc they're harder to place
-    # -> count number of room uses in a day as another way to break ties
-    
-    
-    """
-    Ideal implementation: can index a date and time then see which rooms are mapped to it
-
-    dayToAvailability[date] = {
-                                building: {
-                                            time: duration,
-                                            time: duration
-                                            },
-                                building: {}
-                            }
-    """
     availability = util.makeAvailabilityTable()
+    dateToBalancer = util.makeLoadBalancers()
+    lessonToRoom = {}
+
     for lesson in securedLessons:
 
         lessonDatetime = util.lessonToDateTime(lesson)
         availableRooms = availability[lessonDatetime.date()]
+        balancer = dateToBalancer[lessonDatetime.date()]
 
-        # initializing the load balancer with availability specific to this lesson's date
-        balancer = LoadBalancer()
-        for room, availability in availableRooms:
-            totalHoursAvailable = sum(duration for _, duration in availability)
-            balancer.insert(room, totalHoursAvailable)
+        # temp holds values from the pq after we pop them for re-insertion
+        optimalRoom, hoursRemaining = None, 0
+        temp = []
+
+        # loop thru the priority queue and take the first optimal room thats available
+        while optimalRoom not in availableRooms and not balancer.isEmpty():
+            optimalRoom, hoursRemaining = balancer.popTop()
+            temp.append((optimalRoom, hoursRemaining))
+            
+        # means default room is the only one available
+        if optimalRoom is None:
+            lessonToRoom.insert({lesson: availableRooms[0]})
+
+        else:
+            
+            # room assignment logic for the variables
+            roomIndex = temp.index((optimalRoom, hoursRemaining))
+            lessonToRoom.insert({lesson: optimalRoom})
+            availability.blockOut(lesson, optimalRoom)
+            
+            # updating the pq through the temp index; reducing the hours remaining for the optimal room
+            newHoursRemaining = hoursRemaining - util.lessonDurationToTime(lesson)
+            temp[roomIndex] = (optimalRoom, newHoursRemaining)
         
+        balancer.insert(item for item in temp) # adds everything back to the pq
 
-    
-    
-    raise NotImplementedError
+    return lessonToRoom

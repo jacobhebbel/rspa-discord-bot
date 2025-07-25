@@ -1,17 +1,20 @@
 from pymongo import MongoClient
 from datetime import datetime, time
 from classes.availabilityTable import AvailabilityTable
+from classes.loadBalancer import LoadBalancer
 import os
 
 db = None
 status = {
     'pending': 0,
     'conflicted': 1,
-    'secured': 2,
-    'incompatible': 3,
-    'booked': 4,
-    'past': 5,
-    'paid': 6
+    'incompatible': 2,
+    'secured': 3,
+    'confirmed': 4,
+    'booked': 5,
+    'filled': 6,
+    'past': 7,
+    'paid': 8
 }
 
 def getDatabaseConnection(collection):
@@ -39,8 +42,8 @@ def lessonToDateTime(lesson):
     
     return datetime(lessonDate[2], lessonDate[0], lessonDate[1], lessonTime[0], lessonTime[1], 0)
 
-def lessonDurationToTime(duration):
-    return datetime.time(duration)
+def lessonDurationToTime(lesson):
+    return time(minute=60) if lesson['isFullHour'] else time(minute=30)
 
 def lessonsConflict(lessonA, lessonB):
 
@@ -71,3 +74,14 @@ def makeAvailabilityTable():
     db = getDatabaseConnection('rooms')
     data = db.find()
     return AvailabilityTable(data)
+
+def makeLoadBalancers(dates):
+    dateToBalancer = {}
+    for date in dates:
+        
+        db = getDatabaseConnection('schedule')
+        schedule = db.find_one(date)
+        lb = LoadBalancer(schedule)
+        dateToBalancer.insert({date: lb})
+    
+    return dateToBalancer

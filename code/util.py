@@ -1,20 +1,20 @@
 from pymongo import MongoClient
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 from scheduling.availabilityTable import AvailabilityTable
 from scheduling.loadBalancer import LoadBalancer
 import os
 
 db = None
 status = {
-    'pending': 0,
-    'conflicted': 1,
-    'incompatible': 2,
-    'secured': 3,
-    'confirmed': 4,
-    'booked': 5,
-    'filled': 6,
-    'past': 7,
-    'paid': 8
+    'pending': 1,
+    'conflicted': 2,
+    'incompatible': 3,
+    'secured': 4,
+    'confirmed': 5,
+    'booked': 6,
+    'filled': 7,
+    'past': 8,
+    'paid': 9
 }
 
 def getDatabaseConnection(collection):
@@ -40,20 +40,19 @@ def lessonToDateTime(lesson):
     if len(lessonDate) != 3 or len(lessonTime) != 2:
         raise Exception("Lesson date/time arguments are not initialized")
     
-    return datetime(lessonDate[2], lessonDate[0], lessonDate[1], lessonTime[0], lessonTime[1], 0)
+    return datetime(int(lessonDate[2]), int(lessonDate[0]), int(lessonDate[1]), int(lessonTime[0]), int(lessonTime[1], 0))
 
-def lessonDurationToTime(lesson):
-    return time(minute=60) if lesson['isFullHour'] else time(minute=30)
+def durationToTimeDelta(lesson):
+    return timedelta(hours=1) if lesson['isFullHour'] else timedelta(minutes=60)
 
 def lessonsConflict(lessonA, lessonB):
 
     # uses datetime objects to intuitively compare events 
     datetimeA, datetimeB = lessonToDateTime(lessonA), lessonToDateTime(lessonB)
-    durationA = time(minute=60) if lessonA['isFullHour'] else time(minute=30)
-    durationB = time(minute=60) if lessonB['isFullHour'] else time(minute=30)
-                                                                                    
-                                                                                    # ensures A doesn't bleed into B's start
-    return datetimeA + durationA > datetimeB or datetimeB + durationB > datetimeA   # and that B doesn't bleed into A's start
+    durationA, durationB = durationToTimeDelta(lessonA), durationToTimeDelta(lessonB)
+
+    # ensures A doesn't bleed into B's start and that B doesn't bleed into A's start
+    return (datetimeA.date() == datetimeB.date()) and (datetimeA + durationA > datetimeB or datetimeB + durationB > datetimeA)
 
 """performs a findOne on db for a matching handle in teachers collection"""
 def getTeacherFromDiscord(handle):

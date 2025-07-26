@@ -1,5 +1,7 @@
 from flask import Flask, redirect, url_for, request
-import roomAssignment
+import scheduling.roomDistribution as RD
+import scheduling.roomAssignment as RA
+import util
 
 server = Flask(__name__)
 
@@ -8,11 +10,11 @@ def receiveAndProcessLesson():
     data = request.get_json()
     lesson = data['lesson']
 
-    result = roomAssignment.validateLesson(lesson)
+    result = RA.validateLesson(lesson)
     if result['validated'] == False:
         return f'Fields missing and/or unformatted {result['missingFields']}', 400
     
-    succeeded = roomAssignment.processNewLesson(lesson)
+    succeeded = RA.processIncomingLesson(lesson)
     if succeeded == True:
         return f'Lesson was added with status: {lesson['status']}', 200
     else:
@@ -92,6 +94,12 @@ def getUserLessons():
 def uploadScheduleData():
     data = request.get_json()
     schedule = data['schedule']
+    availabilityTable = util.uploadScheduleData(schedule)
+    RD.
+
+    
+
+
 
     # 1. reformat this data to be ready for db insertion
     # 2. insert this data into the database as a new document for each date

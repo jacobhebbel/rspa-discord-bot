@@ -1,7 +1,7 @@
 from pymongo import MongoClient
-from datetime import datetime, time
-from classes.availabilityTable import AvailabilityTable
-from classes.loadBalancer import LoadBalancer
+from datetime import datetime, date, time
+from scheduling.availabilityTable import AvailabilityTable
+from scheduling.loadBalancer import LoadBalancer
 import os
 
 db = None

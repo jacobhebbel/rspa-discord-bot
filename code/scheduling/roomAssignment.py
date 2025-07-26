@@ -1,5 +1,15 @@
 import util
 
+def updateLessonFields(lesson, doesConflict):
+    lesson['status'] = util.status['conflicted'] if doesConflict else util.status['secured']  # sets status based on flag
+
+def checkForConflict(newLesson, existingLessons):
+    for lesson in existingLessons:  # checks every existing lesson for a time conflict
+        if util.lessonsConflict(newLesson, lesson):
+            return True
+        
+    return False
+
 """
 Each request that comes in can be processed sequentially: validate, then observe if there are any date-time conflicts
 Then I need to check for any date-time conflicts with each room. If one exists, insert into db with status "conflicted": else status is "secured"
@@ -8,16 +18,14 @@ def processIncomingLesson(newLesson):
 
     db = util.getDatabaseConnection(collection='lessons')
     existingLessons = util.getLessons(filter={'status': util.status['secured']})
-    doesConflict = False
-    for lesson in existingLessons:  # checks every existing lesson for a time conflict
-        if util.lessonsConflict(newLesson, lesson):
-            doesConflict = True
-            break
+    doesConflict = checkForConflict(newLesson, existingLessons)
     
-    lesson['status'] = util.status['conflicted'] if doesConflict else util.status['secured']  # sets status based on flag
-    id = db['lessons'].insert_one(lesson).inserted_id
+    newLesson['status'] = util.status['conflicted'] if doesConflict else util.status['secured']  # sets status based on flag
+    id = db['lessons'].insert_one(newLesson).inserted_id
 
     return id is not None   # returns True / False based on if the id exists (if exists implies operation succeeded)
+
+
 
 """
 Validates a lesson that it has certain fields initialized. Re-formats from a human-friendly format to a machine-friendly one

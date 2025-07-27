@@ -20,7 +20,7 @@ def distributeConflictedLessons():
     for lesson in conflictedLessons:
 
         lessonDatetime = util.lessonToDateTime(lesson)
-        lessonDuration = util.lessonDurationToTime(lesson)
+        lessonDuration = util.durationToTimeDelta(lesson)
         
         # available rooms
         rooms = availability[lessonDatetime][lessonDuration]

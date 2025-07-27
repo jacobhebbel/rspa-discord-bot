@@ -1,3 +1,4 @@
 /VirtualEnvironment/
 .env
 *.json
+__pycache__/

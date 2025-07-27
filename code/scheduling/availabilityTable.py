@@ -1,4 +1,5 @@
 import util
+from datetime import datetime, date, time, timedelta
 class AvailabilityTable:
 
     def __init__(self, initialData):
@@ -6,12 +7,38 @@ class AvailabilityTable:
         self.preprocessData()
 
     def preprocessData(self):
-        initialData = self.data
+
+        def parseDate(strDate):
+            arrDate = strDate.split('/')
+            return date(month=int(strDate[0]), day=int(strDate[1]), year=int(strDate[2]))
+        
+        def parseSlot(slot, docDate):
+            strStart, strDuration = slot['start'], slot['duration']
+            arrStart = strStart.split(':')
+            return datetime.combine(date=docDate, time=time(hour=int(arrStart[0]), minute=int(arrStart[1]))), timedelta(minutes=int(strDuration))
+        
+
+        dataFromMongo = self.data
         self.data = {}
 
-        for frame in initialData:
-            date = frame['date']
-            self.data.insert({date: frame['rooms'] if frame['rooms'] else []})
+        '''
+        Initial data is a series of mongo docs with date, time, and room
+        '''
+
+        # each doc is unique to a single date
+        for document in dataFromMongo:
+            docDate = parseDate(document['date'])
+            self.data.insert({docDate: []})
+
+            rooms = document['rooms']
+            for room, availability in rooms.items():
+                self.data[docDate].insert({room: []})
+
+                # now looping thru each room's openings
+                for slot in availability:    
+                    slotDatetime, slotTimeDelta = parseSlot(slot)
+                    self.data[room].append((slotDatetime, slotTimeDelta))
+
 
     def __getitem__(self, index):
         # index is a lesson dict. return all rooms available to this lesson

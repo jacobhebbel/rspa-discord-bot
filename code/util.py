@@ -43,7 +43,7 @@ def lessonToDateTime(lesson):
     return datetime(int(lessonDate[2]), int(lessonDate[0]), int(lessonDate[1]), int(lessonTime[0]), int(lessonTime[1], 0))
 
 def durationToTimeDelta(lesson):
-    return timedelta(hours=1) if lesson['isFullHour'] else timedelta(minutes=60)
+    return timedelta(hours=1) if lesson['isFullHour'] else timedelta(minutes=30)
 
 def lessonsConflict(lessonA, lessonB):
 

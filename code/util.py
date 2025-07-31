@@ -1,9 +1,3 @@
-from pymongo import MongoClient
-from datetime import datetime, date, time, timedelta
-from scheduling.availabilityTable import AvailabilityTable
-from scheduling.loadBalancer import LoadBalancer
-import os
-
 db = None
 status = {
     'pending': 1,
@@ -17,6 +11,19 @@ status = {
     'paid': 9
 }
 
+def printTestResults(results):
+    GREEN, RED, RESET = '\033[92m', '\033[91m', '\033[0m'
+    
+    totalTests = len(results)
+    numPassed = sum(int(res) for res in results)
+
+    print(f'Test Results:\t{numPassed} / {totalTests} passed\n')
+
+    for i, res in enumerate(results):
+        color = GREEN if res else RED
+        status = 'pass' if res else 'fail'
+        print(f'Result of Test {i + 1}:\t{color}{status}{RESET}')
+
 def getDatabaseConnection(collection):
     global db
 
@@ -26,12 +33,15 @@ def getDatabaseConnection(collection):
     return db[collection]
 
 def setClient():
+    from pymongo import MongoClient
+    import os
+
     mongoClient = MongoClient(os.getenv('DB'))
     global db
     db = mongoClient['scheduling']
 
-def lessonToDateTime(lesson):
-
+def lessonToDatetime(lesson):
+    from datetime import datetime
     # assume a formatting function is applied to the lesson variable
     # when the object passes the validation function (happens prior in execution)
     lessonDate = lesson['date'].split('/')
@@ -42,14 +52,16 @@ def lessonToDateTime(lesson):
     
     return datetime(int(lessonDate[2]), int(lessonDate[0]), int(lessonDate[1]), int(lessonTime[0]), int(lessonTime[1], 0))
 
-def durationToTimeDelta(lesson):
+def lessonToTimedelta(lesson):
+    from datetime import timedelta
+
     return timedelta(hours=1) if lesson['isFullHour'] else timedelta(minutes=30)
 
 def lessonsConflict(lessonA, lessonB):
 
     # uses datetime objects to intuitively compare events 
-    datetimeA, datetimeB = lessonToDateTime(lessonA), lessonToDateTime(lessonB)
-    durationA, durationB = durationToTimeDelta(lessonA), durationToTimeDelta(lessonB)
+    datetimeA, datetimeB = lessonToDatetime(lessonA), lessonToDatetime(lessonB)
+    durationA, durationB = lessonToTimedelta(lessonA), lessonToTimedelta(lessonB)
 
     # ensures A doesn't bleed into B's start and that B doesn't bleed into A's start
     return (datetimeA.date() == datetimeB.date()) and (datetimeA + durationA > datetimeB or datetimeB + durationB > datetimeA)
@@ -70,11 +82,15 @@ def getLessons(filter):
     return db.find(filter)
 
 def makeAvailabilityTable():
+    from scheduling.availabilityTable import AvailabilityTable
+
     db = getDatabaseConnection('rooms')
     data = db.find()
     return AvailabilityTable(data)
 
 def makeLoadBalancers(dates):
+    from scheduling.loadBalancer import LoadBalancer
+    
     dateToBalancer = {}
     for date in dates:
         

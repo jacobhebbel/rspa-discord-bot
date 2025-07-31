@@ -1,33 +1,38 @@
 import heapq
+from datetime import timedelta
 
+class RoomBalancer:
 
-
-class LoadBalancer:
-
-    def __init__(self, rooms):
-        self.heap = heapq.heapify([room for room in rooms])
+    def __init__(self, roomCapacities):
+        self.heap = heapq.heapify([Room(room, capacity) for room, capacity in roomCapacities])
     
     def isEmpty(self):
-        return len(self.heap) == 0
+        return self.heap == []
     
-    def peek(self):
-        return self.heap[0] 
+    def topItem(self):
+        return self.heap[0]
     
     def pop(self):
         del self.heap[0]
     
-    def insert(self, item, priority):
-        heapq.heappush(self.heap, Room(item, priority))
+    def decrementKey(self, room, duration: timedelta):
 
-    def pushPop(self, item, priority):
-        heapq
+        for item in self.heap:
+            roomName = item.roomName
+            if roomName == room:
+                item.remainingCapacity -= duration
+                break
+
+    def add(self, room, capacity):
+        heapq.heappush(Room(room, capacity))
+
     
 class Room:
 
-    def __init__(self, roomName, remainingCapacity):
+    def __init__(self, roomName, remainingCapacity: timedelta):
         self.roomName = roomName
         self.remainingCapacity = remainingCapacity
     
-    def __lt__(self, other):
+    def __lt__(self, other: timedelta):
         return self.remainingCapacity > other.remainingCapacity
     

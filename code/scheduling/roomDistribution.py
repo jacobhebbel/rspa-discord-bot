@@ -11,6 +11,7 @@ def assignLessonsToRooms(lessonToRoom):
         lesson['building'], lesson['room'] = building, room
         lesson['status'] = util.status['confirmed']
 
+
 def distributeConflictedLessons():
 
     conflictedLessons = util.getLessons(filter={'status': util.status['conflicted']})
@@ -18,62 +19,82 @@ def distributeConflictedLessons():
     lessonToRoom = {}
 
     for lesson in conflictedLessons:
-
-        lessonDatetime = util.lessonToDateTime(lesson)
-        lessonDuration = util.durationToTimeDelta(lesson)
         
         # available rooms
-        rooms = availability[lessonDatetime][lessonDuration]
+        rooms = availability[lesson]
 
         if rooms == []:
             lessonToRoom.insert({lesson: None})
 
         else:
             assignedRoom = rooms[0]
-            availability.blockSlot(lesson, assignedRoom)
+            availability.blockAvailability(lesson, assignedRoom)
             lessonToRoom.insert({lesson: assignedRoom})
 
     return lessonToRoom
 
+
+def buildLessonHeap(lessons, at):
+    import heapq as hq
+
+    heap = hq.heapify([])
+    for lesson in lessons:
+        rooms = at[lesson]
+        priority = len(rooms)   # builds a minimum priority queue
+        hq.heappush((priority, (lesson, rooms)))
+    
+    return heap
+    
+
+def makeLoadBalancers(dates):
+    from scheduling.loadBalancer import LoadBalancer
+    
+    dateToBalancer = {}
+    for date in dates:
         
+        db = util.getDatabaseConnection('schedule')
+        schedule = db.find_one(date)
+        lb = LoadBalancer(schedule)
+        dateToBalancer.insert({date: lb})
+    
+    return dateToBalancer
+
+def getBestRoom(balancer, rooms):
+
+    bestRoom, capacityRemaining = None
+    temp = []
+    while balancer.size() > 0 and bestRoom not in rooms:
+        bestRoom, capacityRemaining = balancer.topItem()
+        temp.append((bestRoom, capacityRemaining))
+        balancer.pop()
+    
+    for room, capacity in temp:
+        balancer.add(room, capacity)
+
+    if room in rooms:
+        return room
+    else:
+        ### I don't know how we get here, so probably should throw an error
+        raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
+    
 
 def distributeSecuredLessons():
+    import heapq as hq
 
     securedLessons = util.getLessons(filter={'status': util.status['secured'], 'building': ''})
     availability = util.makeAvailabilityTable()
-    dateToBalancer = util.makeLoadBalancers()
+    dateToBalancer = makeLoadBalancers(dates=set(util.lessonToDatetime(lesson).date()))
+    orderedLessons = buildLessonHeap(securedLessons, availability)
     lessonToRoom = {}
+    
+    while orderedLessons != []:
+        lesson, availableRooms = hq.heappop(orderedLessons)
+        balancer = dateToBalancer[util.lessonToDatetime(lesson).date()]
 
-    for lesson in securedLessons:
+        bestRoom = getBestRoom(balancer, availableRooms)
+        lessonDuration = util.lessonToTimedelta(lesson)
+        balancer.decrementKey(bestRoom, lessonDuration)
 
-        lessonDatetime = util.lessonToDateTime(lesson)
-        availableRooms = availability[lessonDatetime.date()]
-        balancer = dateToBalancer[lessonDatetime.date()]
-
-        # temp holds values from the pq after we pop them for re-insertion
-        optimalRoom, hoursRemaining = None, 0
-        temp = []
-
-        # loop thru the priority queue and take the first optimal room thats available
-        while optimalRoom not in availableRooms and not balancer.isEmpty():
-            optimalRoom, hoursRemaining = balancer.popTop()
-            temp.append((optimalRoom, hoursRemaining))
-            
-        # means default room is the only one available
-        if optimalRoom is None:
-            lessonToRoom.insert({lesson: availableRooms[0]})
-
-        else:
-            
-            # room assignment logic for the variables
-            roomIndex = temp.index((optimalRoom, hoursRemaining))
-            lessonToRoom.insert({lesson: optimalRoom})
-            availability.blockOut(lesson, optimalRoom)
-            
-            # updating the pq through the temp index; reducing the hours remaining for the optimal room
-            newHoursRemaining = hoursRemaining - util.lessonDurationToTime(lesson)
-            temp[roomIndex] = (optimalRoom, newHoursRemaining)
-        
-        balancer.insert(item for item in temp) # adds everything back to the pq
+        lessonToRoom.update({lesson: bestRoom})
 
     return lessonToRoom

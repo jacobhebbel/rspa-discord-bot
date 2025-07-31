@@ -87,16 +87,3 @@ def makeAvailabilityTable():
     db = getDatabaseConnection('rooms')
     data = db.find()
     return AvailabilityTable(data)
-
-def makeLoadBalancers(dates):
-    from scheduling.loadBalancer import LoadBalancer
-    
-    dateToBalancer = {}
-    for date in dates:
-        
-        db = getDatabaseConnection('schedule')
-        schedule = db.find_one(date)
-        lb = LoadBalancer(schedule)
-        dateToBalancer.insert({date: lb})
-    
-    return dateToBalancer

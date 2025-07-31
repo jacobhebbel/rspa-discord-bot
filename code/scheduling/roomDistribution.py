@@ -46,16 +46,17 @@ def buildLessonHeap(lessons, at):
     return heap
     
 
-def makeLoadBalancers(dates):
-    from scheduling.loadBalancer import LoadBalancer
+def makeRoomBalancers(dates):
+    from scheduling.roomBalancer import RoomBalancer
     
     dateToBalancer = {}
     for date in dates:
         
         db = util.getDatabaseConnection('schedule')
-        schedule = db.find_one(date)
-        lb = LoadBalancer(schedule)
-        dateToBalancer.insert({date: lb})
+        dateFilter = {'date': date.strftime('%m-%d-%Y')}
+        schedule = db.find_one(filter=dateFilter)
+        rb = RoomBalancer(schedule)
+        dateToBalancer.insert({date: rb})
     
     return dateToBalancer
 
@@ -83,7 +84,7 @@ def distributeSecuredLessons():
 
     securedLessons = util.getLessons(filter={'status': util.status['secured'], 'building': ''})
     availability = util.makeAvailabilityTable()
-    dateToBalancer = makeLoadBalancers(dates=set(util.lessonToDatetime(lesson).date()))
+    dateToBalancer = makeRoomBalancers(dates=set(util.lessonToDatetime(lesson).date()))
     orderedLessons = buildLessonHeap(securedLessons, availability)
     lessonToRoom = {}
     

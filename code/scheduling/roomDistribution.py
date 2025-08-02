@@ -1,7 +1,5 @@
 import util
 
-
-
 def assignLessonsToRooms(lessonToRoom):
     for lesson, roomTuple in lessonToRoom.items():
         
@@ -31,7 +29,6 @@ def distributeConflictedLessons(lessons, availability):
 
     return lessonToRoom
 
-
 def buildLessonHeap(lessons, at):
     import heapq as hq
 
@@ -43,7 +40,6 @@ def buildLessonHeap(lessons, at):
     
     return heap
     
-
 def makeRoomBalancers(dates):
     from scheduling.roomBalancer import RoomBalancer
     
@@ -76,7 +72,6 @@ def getBestRoom(balancer, rooms):
         ### I don't know how we get here, so probably should throw an error
         raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
     
-
 def distributeSecuredLessons():
     import heapq as hq
 

@@ -10,11 +10,14 @@ class RoomSolver:
         self.at = util.makeAvailabilityTable(filter)
         self.rb = RoomBalancer(util.getSchedule(date))
 
+    # checks for a datetime conflict with existing secured lessons
     def assignIncomingLesson(self, incoming):
         conflictingLessons = [lesson for lesson in self.lessons if (lesson['status'] is util.status['secured']) and util.lessonsConflict(lesson, incoming)]
         return conflictingLessons == []
 
-    def distributeSecuredRooms(self):
+
+    # distributes secured lessons w/out rooms into other piano rooms 
+    def distributeSecuredLessons(self):
         import heapq as hq
 
         securedLessons = [lesson for lesson in self.lessons if lesson['status'] is util.status['secured']][:]
@@ -33,6 +36,7 @@ class RoomSolver:
 
         return lessonToRoom
 
+    # creates a pq using MRV heuristic
     def buildLessonHeap(lessons, at):
         import heapq as hq
 
@@ -44,6 +48,7 @@ class RoomSolver:
     
         return heap
 
+    # searches the balancer for the optimal room that's available to this lesson
     def getBestRoom(balancer, rooms):
 
         bestRoom, capacityRemaining = None
@@ -63,7 +68,8 @@ class RoomSolver:
             raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
 
 
-    def distributeConflictedRooms(self):
+    # gives conflicted lessons room assignments
+    def distributeConflictedLessons(self):
 
         variables = [lesson for lesson in self.lessons if lesson['status'] is util.status['conflicted']]
         variables = sorted(variables, key=len(self.at[v] for v in variables))
@@ -72,7 +78,7 @@ class RoomSolver:
         self.domainReduction(vToD)
         self.roomAssignment(vToD)
     
-    # implementation of basic AC3
+    # implementation of basic AC3 algorithm
     def domainReduction(self, domains):
         variables = domains.keys()
         rooms = self.at

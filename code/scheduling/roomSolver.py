@@ -12,9 +12,14 @@ class RoomSolver:
 
     def assignIncomingLesson(self, incoming):
         conflictingLessons = [lesson for lesson in self.lessons if (lesson['status'] is util.status['secured']) and util.lessonsConflict(lesson, incoming)]
+        util.updateLessonFields(incoming, {
+            'status': util.status['secured'] if conflictingLessons == [] else util.status['conflicted']
+        })
         return conflictingLessons == []
 
-    def distributeSecuredRooms(self):
+
+
+    def distributeSecuredLessons(self):
         import heapq as hq
 
         securedLessons = [lesson for lesson in self.lessons if lesson['status'] is util.status['secured']][:]
@@ -31,7 +36,14 @@ class RoomSolver:
 
             lessonToRoom.update({lesson: bestRoom})
 
-        return lessonToRoom
+        for lesson, roomAssignment in lessonToRoom.items():
+            util.updateLessonFields(lesson, {
+                'status': util.status['secured'],
+                'building': roomAssignment.split(' - ')[0],
+                'room': roomAssignment.split(' - ')[1]
+            })
+
+        return lessonToRoom.keys()
 
     def buildLessonHeap(lessons, at):
         import heapq as hq
@@ -63,6 +75,7 @@ class RoomSolver:
             raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
 
 
+
     def distributeConflictedRooms(self):
 
         variables = [lesson for lesson in self.lessons if lesson['status'] is util.status['conflicted']]
@@ -71,6 +84,16 @@ class RoomSolver:
         vToD = {v: (v['start'], v['duration'], room for room in domains[v]) for v in variables}
         self.domainReduction(vToD)
         self.roomAssignment(vToD)
+
+        for lesson, roomAssignment in vToD.items():
+            util.updateLessonFields(lesson, {
+                'status': util.status['secured'] if roomAssignment else util.status['impossible'],
+                'building': roomAssignment.split(' - ')[0] if roomAssignment is not None else 'None',
+                'room' : roomAssignment.split(' - ')[1] if roomAssignment is not None else 'None'
+            })
+
+        return vToD.keys()
+
     
     # implementation of basic AC3
     def domainReduction(self, domains):

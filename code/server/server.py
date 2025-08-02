@@ -1,6 +1,6 @@
-from flask import Flask, redirect, url_for, request
-import scheduling.roomDistribution as RD
-import scheduling.roomAssignment as RA
+from flask import Flask, request
+from scheduling.roomSolver import RoomSolver as Assigner
+from scheduling.roomValidator import RoomValidator as Validator
 import util
 
 server = Flask(__name__)
@@ -10,12 +10,12 @@ def receiveAndProcessLesson():
     data = request.get_json()
     lesson = data['lesson']
 
-    result = RA.validateLesson(lesson)
+    result = Validator.validateLesson(lesson)
     if result['validated'] == False:
         return f'Fields missing and/or unformatted {result['missingFields']}', 400
     
-    succeeded = RA.processIncomingLesson(lesson)
-    if succeeded == True:
+    succeeded = Assigner.assignIncomingLesson(lesson)
+    if succeeded:
         return f'Lesson was added with status: {lesson['status']}', 200
     else:
         return 'Lesson failed to be added, try again', 500

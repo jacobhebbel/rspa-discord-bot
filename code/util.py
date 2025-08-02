@@ -2,7 +2,7 @@ db = None
 status = {
     'pending': 1,
     'conflicted': 2,
-    'incompatible': 3,
+    'impossible': 3,
     'secured': 4,
     'confirmed': 5,
     'booked': 6,
@@ -87,3 +87,7 @@ def makeAvailabilityTable():
     db = getDatabaseConnection('rooms')
     data = db.find()
     return AvailabilityTable(data)
+
+def updateLessonFields(lesson, fieldToValue):
+    for field, value in fieldToValue.items():
+        lesson[field] = value

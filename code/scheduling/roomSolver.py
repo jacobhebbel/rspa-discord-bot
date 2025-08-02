@@ -13,6 +13,9 @@ class RoomSolver:
     # checks for a datetime conflict with existing secured lessons
     def assignIncomingLesson(self, incoming):
         conflictingLessons = [lesson for lesson in self.lessons if (lesson['status'] is util.status['secured']) and util.lessonsConflict(lesson, incoming)]
+        util.updateLessonFields(incoming, {
+            'status': util.status['secured'] if conflictingLessons == [] else util.status['conflicted']
+        })
         return conflictingLessons == []
 
 
@@ -34,7 +37,14 @@ class RoomSolver:
 
             lessonToRoom.update({lesson: bestRoom})
 
-        return lessonToRoom
+        for lesson, roomAssignment in lessonToRoom.items():
+            util.updateLessonFields(lesson, {
+                'status': util.status['secured'],
+                'building': roomAssignment.split(' - ')[0],
+                'room': roomAssignment.split(' - ')[1]
+            })
+
+        return lessonToRoom.keys()
 
     # creates a pq using MRV heuristic
     def buildLessonHeap(lessons, at):
@@ -68,6 +78,7 @@ class RoomSolver:
             raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
 
 
+
     # gives conflicted lessons room assignments
     def distributeConflictedLessons(self):
 
@@ -77,6 +88,17 @@ class RoomSolver:
         vToD = {v: (v['start'], v['duration'], room for room in domains[v]) for v in variables}
         self.domainReduction(vToD)
         self.roomAssignment(vToD)
+
+        
+        for lesson, roomAssignment in vToD.items():
+            util.updateLessonFields(lesson, {
+                'status': util.status['secured'] if roomAssignment else util.status['impossible'],
+                'building': roomAssignment.split(' - ')[0] if roomAssignment is not None else 'None',
+                'room' : roomAssignment.split(' - ')[1] if roomAssignment is not None else 'None'
+            })
+
+        return vToD.keys()
+
     
     # implementation of basic AC3 algorithm
     def domainReduction(self, domains):

@@ -1,5 +1,7 @@
 import util
 
+
+
 def assignLessonsToRooms(lessonToRoom):
     for lesson, roomTuple in lessonToRoom.items():
         
@@ -11,14 +13,10 @@ def assignLessonsToRooms(lessonToRoom):
         lesson['building'], lesson['room'] = building, room
         lesson['status'] = util.status['confirmed']
 
+def distributeConflictedLessons(lessons, availability):
 
-def distributeConflictedLessons():
-
-    conflictedLessons = util.getLessons(filter={'status': util.status['conflicted']})
-    availability = util.makeAvailabilityTable()
     lessonToRoom = {}
-
-    for lesson in conflictedLessons:
+    for lesson in lessons:
         
         # available rooms
         rooms = availability[lesson]

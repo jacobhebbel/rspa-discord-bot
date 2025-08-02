@@ -23,7 +23,7 @@ class RoomSolver:
     def distributeSecuredLessons(self):
         import heapq as hq
 
-        securedLessons = [lesson for lesson in self.lessons if lesson['status'] is util.status['secured']][:]
+        securedLessons = [lesson for lesson in self.lessons if lesson['status'] is util.status['secured']]
         availability, balancer = self.at, self.rb
         orderedLessons = self.buildLessonHeap(securedLessons, availability)
         lessonToRoom = {}
@@ -51,19 +51,17 @@ class RoomSolver:
         import heapq as hq
 
         heap = hq.heapify([])
-        for lesson in lessons:
-            rooms = at[lesson]
-            priority = len(rooms)   # builds a minimum priority queue
+        for lesson in lessons[:]:
+            priority, rooms = len(rooms), at[lesson]
             hq.heappush((priority, (lesson, rooms)))
     
         return heap
 
     # searches the balancer for the optimal room that's available to this lesson
-    def getBestRoom(balancer, rooms):
-
+    def getBestRoom(balancer, availableRooms):
         bestRoom, capacityRemaining = None
         temp = []
-        while balancer.size() > 0 and bestRoom not in rooms:
+        while balancer.size() > 0 and bestRoom not in availableRooms:
             bestRoom, capacityRemaining = balancer.topItem()
             temp.append((bestRoom, capacityRemaining))
             balancer.pop()
@@ -71,11 +69,11 @@ class RoomSolver:
         for room, capacity in temp:
             balancer.add(room, capacity)
 
-        if room in rooms:
+        if room in availableRooms:
             return room
         else:
             ### I don't know how we get here, so probably should throw an error
-            raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
+            raise Exception(f'Did not find any of {availableRooms} inside load balancer; logic error')
 
 
 
@@ -99,7 +97,6 @@ class RoomSolver:
 
         return vToD.keys()
 
-    
     # implementation of basic AC3 algorithm
     def domainReduction(self, domains):
         variables = domains.keys()

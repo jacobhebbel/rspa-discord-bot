@@ -60,8 +60,6 @@ lessonC = Lesson({
     'status': util.status['pending'],
 })
 
-
-
 def testInit():
     global availability
 
@@ -72,6 +70,16 @@ def testInit():
     })
 
     return isinstance(availability, Availability)
+
+def testToDatabase():
+    global availability
+
+    data = {
+        'datetime': availability.start.isoformat(),
+        'duration': availability.duration.seconds
+    }
+
+    return data == availability.toDatabase()
 
 def testIndex():
     global availability
@@ -87,10 +95,6 @@ def testCanFit():
     global availability
     global lessonA, lessonB, lessonC
     doesFit, doesNotFit = True, False
-
-    print(availability.canFit(lessonA) == doesFit)
-    print(availability.canFit(lessonB) == doesNotFit)
-    print(availability.canFit(lessonC) == doesNotFit)
 
     return (availability.canFit(lessonA) == doesFit) and (availability.canFit(lessonB) == doesNotFit) and (availability.canFit(lessonC) == doesNotFit)
 
@@ -108,11 +112,9 @@ def testSplitOnLesson():
     return isinstance(resA, tuple) and isinstance(resB, Availability) and isinstance(resC, Availability)
 
 
-
-
 def main():
 
-    results = [testInit(), testIndex(), testCanFit(), testSplitOnLesson()]
+    results = [testInit(), testIndex(), testCanFit(), testSplitOnLesson(), testToDatabase()]
     util.printTestResults(results)
 
 if __name__ == '__main__':

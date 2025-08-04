@@ -2,6 +2,7 @@ import util
 import copy
 from datetime import datetime, timedelta
 from scheduling.lesson import Lesson
+from scheduling.availability import Availability
 
 '''
 Each lesson object is initialized with a dictionary similar to the result of calling mongo for a lesson document
@@ -146,11 +147,21 @@ def testToDatabase():
     return lessonA.toDatabase() == dataA and lessonB.toDatabase() == dataB and lessonC.toDatabase() == dataC
 
 def testFitsInside():
-    raise NotImplementedError
+    availability = Availability({
+        'location': 'West Hall - 323',
+        'start': datetime(2000, 1, 1, 8, 30).isoformat(),
+        'duration': timedelta(minutes=30).seconds
+    })
+
+    doesFit, doesNotFit = True, False
+
+    print(lessonA.fitsInside(availability) == doesFit)
+    print(lessonB.fitsInside(availability) == doesNotFit)
+    return (lessonA.fitsInside(availability) == doesFit) and (lessonB.fitsInside(availability) == doesNotFit)
 
 def main():
 
-    results = [testInit(), testIndex(), testDatetimeConflict(), testRoomConflict(), testToDatabase()]
+    results = [testInit(), testIndex(), testDatetimeConflict(), testRoomConflict(), testToDatabase(), testFitsInside()]
     util.printTestResults(results)
 
 if __name__ == '__main__':

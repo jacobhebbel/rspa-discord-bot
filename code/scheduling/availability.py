@@ -54,3 +54,9 @@ class Availability:
             self.start, self.duration = lesson.end, timeAfter
             return self
     
+
+    def toDatabase(self):
+        return {
+            'datetime': self.start.isoformat(),
+            'duration': self.duration.seconds
+        }

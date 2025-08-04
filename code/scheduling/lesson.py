@@ -74,5 +74,5 @@ class Lesson:
     def fitsInside(self, availability):
         # returns t/f if this lesson fits inside this availability
         thisDate, otherDate = self.start.date(), availability.start.date()
-        return (self.location == availability.location) and (thisDate == otherDate) and (availability.start() < self.start() and availability.end() > self.end())
+        return (thisDate == otherDate) and (availability.start <= self.start and availability.end >= self.end)
     

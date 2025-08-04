@@ -24,7 +24,7 @@ class Lesson:
                 self.start = datetime.fromisoformat(value)
             
             elif field == 'duration':
-                self.duration = timedelta(seconds=value)
+                self.duration = timedelta(seconds=int(value))
             
             else:
                 setattr(self, field, value)
@@ -56,7 +56,12 @@ class Lesson:
             return None
         
         return getattr(self, index)
-        
+    
+    def __setitem__(self, index, value):
+        if index not in self.INVARIANT_FIELDS:
+            raise Exception
+        setattr(self, index, value)
+    
     def datetimeConflict(self, other):
         # returns t/f if this lesson conflicts with another
         thisDate, otherDate = self.start.date(), other.start.date()

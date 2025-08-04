@@ -1,4 +1,5 @@
 import util
+import copy
 from datetime import datetime, timedelta
 from scheduling.lesson import Lesson
 
@@ -68,8 +69,11 @@ def testInit():
 def testIndex():
     global lessonA
 
-    expected = 'West Hall - 323'
-    observed = lessonA['location']
+    copyA = copy.copy(lessonA)
+    expected = 'West Hall - 326'
+    copyA['location'] = expected
+
+    observed = copyA['location']
     return expected == observed
 
 

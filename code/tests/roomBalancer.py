@@ -12,7 +12,6 @@ def testInitialization():
     flag = True
     try:
         rb = RB(data)
-        print(rb.heap)
     except:
         flag = False
     finally:

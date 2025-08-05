@@ -1,39 +1,164 @@
 from scheduling.availabilityTable import AvailabilityTable as AT
+from scheduling.lesson import Lesson
+from datetime import datetime, timedelta
 import util
+
+global at
+at = None
+
+date1 = datetime(2000, 1, 1).isoformat()
+date2 = datetime(2000, 1, 2).isoformat()
+date3 = datetime(2000, 1, 3).isoformat()
+
+
+availability1 = {
+    'West Hall - 323': [
+        {'datetime': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=30).seconds}, 
+        {'start': datetime(2000, 1, 1, 12).isoformat(), 'duration': timedelta(minutes=120).seconds},
+        {'start': datetime(2000, 1, 1, 2000).isoformat(), 'duration': timedelta(minutes=90).seconds}
+    ],
+    'Rensselaer Union - 5502': [
+        {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=120).seconds}
+    ],
+    'DCC - 327A': [
+        {'start': datetime(2000, 1, 1, 13).isoformat(),'duration': timedelta(minutes=35).seconds},
+        {'start': datetime(2000, 1, 1, 17, 50).isoformat(), 'duration': timedelta(minutes=120).seconds},
+        {'start': datetime(2000, 1, 1, 16).isoformat(), 'duration': timedelta(minutes=180).seconds}
+    ]
+}
+
+availability2 = {
+    'West Hall - 326': [
+        {'start': datetime(2000, 1, 2, 8).isoformat(), 'duration': timedelta(minutes=120).seconds},
+        {'start': datetime(2000, 1, 2, 12).isoformat(), 'duration': timedelta(minutes=120).seconds}
+    ],
+    'West Hall - 327': [
+        {'start': datetime(2000, 1, 2, 8, 15).isoformat(), 'duration': timedelta(minutes=35).seconds},
+        {'start': datetime(200, 1, 2, 18).isoformat(), 'duration': timedelta(minutes=50).seconds}
+    ],
+    'DCC - 327A': [
+        {'start': datetime(2000, 1, 2, 12).isoformat(), 'duration': timedelta(minutes=120).seconds},
+        {'start': datetime(2000, 1, 2, 16).isoformat(), 'duration': timedelta(minutes=90).seconds}
+    ],
+    'DCC - 327B': [
+        {'start': datetime(2000, 1, 2, 10).isoformat(), 'duration': timedelta(hours=9).seconds}
+    ],
+    'DCC - 327C': [
+        {'start': datetime(2000, 1, 2, 16).isoformat(), 'duration': timedelta(hours=3).seconds},
+        {'start': datetime(2000, 1, 2, 13).isoformat(), 'duration': timedelta(minutes=35).seconds},
+        {'start': datetime(2000, 1, 2, 17, 50).isoformat(), 'duration': timedelta(minutes=130).seconds}
+    ]
+}
+
+availability3 = {
+    'West Hall - 110': [
+        {'start': datetime(2000, 1, 3, 8).isoformat(), 'duration': timedelta(minutes=35).seconds},
+        {'start': datetime(2000, 1, 3, 13).isoformat(), 'duration': timedelta(minutes=50).seconds}
+    ],
+    'West Hall - 326': [
+        {'start': datetime(2000, 1, 3, 8).isoformat(), 'duration': timedelta(minutes=60).seconds},
+        {'start': datetime(2000, 1, 3, 14).isoformat(), 'duration': timedelta(minutes=35).seconds}
+    ],
+    'DCC - 327B': [
+        {'start': datetime(2000, 1, 3, 13).isoformat(), 'duration': timedelta(minutes=35).seconds},
+        {'start': datetime(2000, 1, 3, 17, 50).isoformat(), 'duration': timedelta(minutes=130).seconds}
+    ],
+    'RU - 5502': [
+        {'start': datetime(2000, 1, 3, 8).isoformat(), 'duration': timedelta(hours=14).seconds}
+    ]
+}
+
+global roomData
+roomData = {
+    date1: availability1,
+    date2: availability2,
+    date3: availability3
+}
+
+global lessonA, lessonB, lessonC
+
+lessonA = Lesson({
+    'id': '1',
+    'teacherId': 'jacob',
+    'studentId': '',
+    'hasStudent': False,
+    'packageId': '',
+    'isPackage': False,
+    'datetime': datetime(2000, 1, 1, 8, 30).isoformat(),
+    'duration': timedelta(minutes=30).seconds,
+    'building': 'West Hall',
+    'room': '323',
+    'hasRoom': True,
+    'status': util.status['secured'],
+})
+
+lessonB = Lesson({
+    'id': '2',
+    'teacherId': 'hope',
+    'studentId': '',
+    'hasStudent': False,
+    'packageId': '',
+    'isPackage': False,
+    'datetime': datetime(2000, 1, 1, 9).isoformat(),
+    'duration': timedelta(minutes=30).seconds,
+    'building': 'West Hall',
+    'room': '326',
+    'hasRoom': True,
+    'status': util.status['secured'],
+})
+
+lessonC = Lesson({
+    'id': '3',
+    'teacherId': 'Army',
+    'studentId': '',
+    'hasStudent': False,
+    'packageId': '',
+    'isPackage': False,
+    'datetime': datetime(2000, 1, 1, 8).isoformat(),
+    'duration': timedelta(minutes=60).seconds,
+    'building': 'West Hall',
+    'room': '323',
+    'hasRoom': True,
+    'status': util.status['pending'],
+})
+
+def testInit():
+    global at, roomData
+    at = AT(roomData)
+
+    return True
+
+def testIndexWithLesson():
+    
+    global at
+    global lessonA, lessonB, lessonC
+
+    expectedA = ['West Hall - 323', 'RU - 5502']
+    expectedB = []
+    expectedC = ['DCC - 327A']
+
+    resA, resB, resC = at[lessonA], at[lessonB], at[lessonC]
+    return (expectedA == resA, expectedB == resB, expectedC == resC)
+
+
+def testIndexWithDate():
+
+    global at
+    dateA, dateB, dateC = datetime(2000, 1, 1), datetime(2000, 1, 2), datetime(2000, 1, 3)
+    expectedA, expectedB, expectedC = [], [], []
+
+    resA, resB, resC = at[dateA], at[dateB], at[dateC]
+    return (expectedA == resA, expectedB == resB, expectedC == resC)
+
+def testBlockAvailability():
+    pass
+
+
 
 
 def testBuildingTable():
-
-    date1 = '1/1/2000'
-    date2 = '1/2/2000'
-    date3 = '1/3/2000'
-
-    availability1 = {
-        'West Hall - 323': [{'start': '08:00','duration': '35'}, {'start': '13:00', 'duration': '50'}],
-        'Rensselaer Union - 5502': [{'start': '08:00','duration': '720'}],
-        'DCC - 327A': [{'start': '13:00','duration': '35'}, {'start': '17:50', 'duration': '130'}]
-    }
-
-    availability2 = {
-        'West Hall - 327': [{'start': '09:15', 'duration': '35'}, {'start': '18:00', 'duration': '50'}],
-        'Rensselaer Union - 5502': [{'start': '08:00', 'duration': '720'}],
-        'DCC - 327C': [{'start': '13:00', 'duration': '35'}, {'start': '17:50', 'duration': '130'}]
-    }
-
-    availability3 = {
-        'West Hall - 110': [{'start': '08:00', 'duration': '35'}, {'start': '13:00', 'duration': '50'}],
-        'West Hall - 326': [{'start': '08:00', 'duration': '60'}, {'start': '14:00', 'duration': '35'}],
-        'DCC - 327B': [{'start': '13:00', 'duration': '35'}, {'start': '17:50', 'duration': '130'}]
-    }
-
-    roomData = {
-        date1: availability1,
-        date2: availability2,
-        date3: availability3
-    }
-
-    at1 = AT(roomData)
-    at2 = AT({date3: availability3})
+    global at, roomData
+    at = AT(roomData)
 
     # print(at1)
     # print(at2)

@@ -21,18 +21,18 @@ def testInit():
     global lessonA, lessonB, lessonC
 
     lessonA = Lesson({
-    'id': '1',
-    'teacherId': 'jacob',
-    'studentId': '',
-    'hasStudent': False,
-    'packageId': '',
-    'isPackage': False,
-    'datetime': datetime(2000, 1, 1, 8, 30).isoformat(),
-    'duration': timedelta(minutes=30).seconds,
-    'building': 'West Hall',
-    'room': '323',
-    'hasRoom': True,
-    'status': util.status['secured'],
+        'id': '1',
+        'teacherId': 'jacob',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'datetime': datetime(2000, 1, 1, 8, 30).isoformat(),
+        'duration': timedelta(minutes=30).seconds,
+        'building': 'West Hall',
+        'room': '323',
+        'hasRoom': True,
+        'status': util.status['secured'],
     })
 
     lessonB = Lesson({

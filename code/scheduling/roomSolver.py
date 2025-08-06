@@ -52,7 +52,7 @@ class RoomSolver:
 
     def getBestRoom(balancer, rooms):
 
-        bestRoom, capacityRemaining = None
+        bestRoom, capacityRemaining = None, None
         temp = []
         while balancer.size() > 0 and bestRoom not in rooms:
             bestRoom, capacityRemaining = balancer.topItem()
@@ -67,7 +67,6 @@ class RoomSolver:
         else:
             ### I don't know how we get here, so probably should throw an error
             raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
-
 
     def distributeConflictedLessons(self):
 
@@ -151,4 +150,9 @@ class RoomSolver:
         return True
             
     def updateLessonObjects(self, mapping):
-        pass
+
+        for lesson, room in mapping:
+            lesson['location'] = room if room is not None else ''
+            lesson['status'] = util.status['secured'] if room is not None else util.status['impossible']
+
+

@@ -1,25 +1,26 @@
+from datetime import datetime
 import util
 
 class RoomSolver:
 
-    def __init__(self, date):
+    def __init__(self, data):
+        from scheduling.lesson import Lesson
         from scheduling.roomBalancer import RoomBalancer
+        from scheduling.availabilityTable import AvailabilityTable as AT
+        
+        self.date = datetime.fromisoformat(data['date'])
+        self.lessons = [Lesson(lesson) for lesson in util.getLessons(filter={'date': data['date']})]
+        self.at = AT(data)
+        self.rb = RoomBalancer(data['capacities'])
 
-        filter = {'date': date.strf('%Y-%m-%d')}
-        self.lessons = util.getLessons(filter=filter)
-        self.at = util.makeAvailabilityTable(filter)
-        self.rb = RoomBalancer(util.getSchedule(date))
-
-    # checks for a datetime conflict with existing secured lessons
     def assignIncomingLesson(self, incoming):
-        conflictingLessons = [lesson for lesson in self.lessons if (lesson['status'] is util.status['secured']) and util.lessonsConflict(lesson, incoming)]
-        util.updateLessonFields(incoming, {
-            'status': util.status['secured'] if conflictingLessons == [] else util.status['conflicted']
-        })
+        from scheduling.lesson import Lesson
+        if not isinstance(incoming, Lesson):
+            incoming = Lesson(incoming)
+        
+        conflictingLessons = [lesson for lesson in self.lessons if (lesson['status'] is util.status['secured']) and incoming.conflictsWith(lesson)]
         return conflictingLessons == []
 
-
-    # distributes secured lessons w/out rooms into other piano rooms 
     def distributeSecuredLessons(self):
         import heapq as hq
 
@@ -32,8 +33,7 @@ class RoomSolver:
             lesson, availableRooms = hq.heappop(orderedLessons)
 
             bestRoom = self.getBestRoom(balancer, availableRooms)
-            lessonDuration = util.lessonToTimedelta(lesson)
-            balancer.decrementKey(bestRoom, lessonDuration)
+            balancer.decrementKey(bestRoom, lesson['duration'])
 
             lessonToRoom.update({lesson: bestRoom})
 
@@ -57,17 +57,17 @@ class RoomSolver:
     
         return heap
 
-    # searches the balancer for the optimal room that's available to this lesson
-    def getBestRoom(balancer, availableRooms):
-        bestRoom, capacityRemaining = None
+    def getBestRoom(balancer, rooms):
+
+        bestRoom, capacityRemaining = None, None
         temp = []
         while balancer.size() > 0 and bestRoom not in availableRooms:
             bestRoom, capacityRemaining = balancer.topItem()
             temp.append((bestRoom, capacityRemaining))
-            balancer.pop()
+            balancer.popItem()
         
         for room, capacity in temp:
-            balancer.add(room, capacity)
+            balancer.addItem(room, capacity)
 
         if room in availableRooms:
             return room
@@ -76,28 +76,19 @@ class RoomSolver:
             raise Exception(f'Did not find any of {availableRooms} inside load balancer; logic error')
 
 
-
-    # gives conflicted lessons room assignments
     def distributeConflictedLessons(self):
 
         variables = [lesson for lesson in self.lessons if lesson['status'] is util.status['conflicted']]
-        variables = sorted(variables, key=len(self.at[v] for v in variables))
-        domains = self.at
-        vToD = {v: (v['start'], v['duration'], room for room in domains[v]) for v in variables}
-        self.domainReduction(vToD)
-        self.roomAssignment(vToD)
-
         
-        for lesson, roomAssignment in vToD.items():
-            util.updateLessonFields(lesson, {
-                'status': util.status['secured'] if roomAssignment else util.status['impossible'],
-                'building': roomAssignment.split(' - ')[0] if roomAssignment is not None else 'None',
-                'room' : roomAssignment.split(' - ')[1] if roomAssignment is not None else 'None'
-            })
-
-        return vToD.keys()
-
-    # implementation of basic AC3 algorithm
+        domains = self.at
+        variableToDomains = {v: [(v['start'], v['duration'], room) for room in domains[v]] for v in variables}
+        
+        reducedDomains = self.domainReduction(variableToDomains)
+        roomAssignments = self.backtrackAlgorithm(assignment={}, variables=reducedDomains.keys(), variableToDomains=reducedDomains)
+        mapping = self.updateLessonObjects(roomAssignments)
+        return mapping
+    
+    # implementation of basic AC3
     def domainReduction(self, domains):
         variables = domains.keys()
         rooms = self.at
@@ -109,15 +100,67 @@ class RoomSolver:
             updateArcs = False
 
             for dx in Dx[:]:
-                if all(util.lessonsConflict(dx, dy) for dy in Dy):
+                if not any(self.satisfiesConstraint(dx, dy) for dy in Dy):
                     Dx.remove(dx)
                     updateArcs = True
                 
             if updateArcs:
                 updateArcs = False
                 for vz in variables:                    # gets shared rooms via set intersection
-                    if (vz != vx) and (vz != vy) and (set(rooms[vx] & set(rooms[vz]))):
+                    if (vz != vx) and (vz != vy) and set(rooms[vx]) & set(rooms[vz]):
                         work.append((vz, vx))
         
         return domains
+
+    def backtrackAlgorithm(self, assignment, variables, variableToDomains):
+
+        if len(assignment) == len(variables):
+            return assignment
+        
+        work = [v for v in variables if v not in assignment.keys()]
+        work = sorted(work, key=lambda v: len(self.at[v]))  # prioritizes lessons with fewest options first
+        v = work[0]
+
+        for domain in variableToDomains[v]:
+
+            if all(self.satisfiesConstraint(domain, d) for d in assignment.values()):
+                
+                newAssignment = assignment.copy()
+                newAssignment[v] = domain
+                
+                prunedDomains = {v: list(variableToDomains[v]) for v in work[1:]}
+                if self.forwardCheck(domain, prunedDomains):
+                
+                    prunedDomains[v] = [domain]
+                    result = self.backtrackAlgorithm(newAssignment, variables, prunedDomains)
+                    if result is not None:
+                        return result
+
+        return None
+    
+    def satisfiesConstraint(self, domainA, domainB):
+            startA, durationA, roomA = domainA
+            startB, durationB, roomB = domainB
+            endA, endB = startA + durationA, startB + durationB
+
+            return not (roomA == roomB and startA < endB and startB < endA)
+    
+    def forwardCheck(self, domain, unassigned):
+
+        for v, domains in unassigned.items():
+            validDomains = [d for d in domains if self.satisfiesConstraint(domain, d)]
+            
+            if validDomains == []:
+                return False
+            else:
+                unassigned[v] = validDomains
+        
+        return True
+            
+    def updateLessonObjects(self, mapping):
+
+        for lesson, room in mapping:
+            lesson['location'] = room if room is not None else ''
+            lesson['status'] = util.status['secured'] if room is not None else util.status['impossible']
+
 

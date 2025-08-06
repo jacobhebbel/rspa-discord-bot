@@ -54,6 +54,13 @@ class Availability:
             self.start, self.duration = lesson.end, timeAfter
             return self
     
+    def overlapsWith(self, other):
+
+        thisDate, otherDate = self.start.date(), other.start.date() 
+        return (
+            (self.location == other.location) and (thisDate == otherDate) and 
+            ((self.start < other.start and self.end > other.start) or (other.start < self.start and other.end > self.start))
+        )
 
     def toDatabase(self):
         return {

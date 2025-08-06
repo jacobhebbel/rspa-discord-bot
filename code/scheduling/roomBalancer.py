@@ -13,7 +13,7 @@ class RoomBalancer:
     def topItem(self):
         return self.heap[0].roomName, self.heap[0].remainingCapacity
     
-    def pop(self):
+    def popItem(self):
         del self.heap[0]
     
     def decrementKey(self, room, duration: timedelta):
@@ -24,7 +24,7 @@ class RoomBalancer:
                 item.remainingCapacity -= duration
                 break
 
-    def add(self, room, capacity):
+    def addItem(self, room, capacity):
         heapq.heappush(Room(room, capacity))
 
     

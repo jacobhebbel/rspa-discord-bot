@@ -1,18 +1,18 @@
-from datetime import datetime
 import util
 
 class RoomSolver:
 
-    def __init__(self, data):
+    def __init__(self, data, lessons):
         from scheduling.lesson import Lesson
         from scheduling.roomBalancer import RoomBalancer
         from scheduling.availabilityTable import AvailabilityTable as AT
         
-        self.date = datetime.fromisoformat(data['date'])
-        self.lessons = [Lesson(lesson) for lesson in util.getLessons(filter={'date': data['date']})]
+        self.lessons = [Lesson(lesson) for lesson in lessons]
         self.at = AT(data)
-        self.rb = RoomBalancer(data['capacities'])
+        self.dateToRBs = {doc['date']: RoomBalancer(doc['capacities']) for doc in data}
 
+
+    # marks as secured / conflicted if it has a datetime conflict or not
     def assignIncomingLesson(self, incoming):
         from scheduling.lesson import Lesson
         if not isinstance(incoming, Lesson):
@@ -21,32 +21,33 @@ class RoomSolver:
         conflictingLessons = [lesson for lesson in self.lessons if (lesson['status'] is util.status['secured']) and incoming.conflictsWith(lesson)]
         return conflictingLessons == []
 
+    # greedily assigns lessons to room availabilities using room balancers to even out usage
     def distributeSecuredLessons(self):
         import heapq as hq
 
         securedLessons = [lesson for lesson in self.lessons if lesson['status'] is util.status['secured']]
-        availability, balancer = self.at, self.rb
-        orderedLessons = self.buildLessonHeap(securedLessons, availability)
+        availabilityTable = self.at
         lessonToRoom = {}
         
-        while orderedLessons != []:
-            lesson, availableRooms = hq.heappop(orderedLessons)
+        
+        for date in availabilityTable.keys():
 
-            bestRoom = self.getBestRoom(balancer, availableRooms)
-            balancer.decrementKey(bestRoom, lesson['duration'])
+            todaysLessons = [lesson for lesson in securedLessons if lesson['start'].date() == date]
+            work = self.buildLessonHeap(todaysLessons, availabilityTable)
+            balancer = self.dateToRBs[date]
+        
+            while work:
+                lesson, availableRooms = hq.heappop(work)
 
-            lessonToRoom.update({lesson: bestRoom})
+                bestRoom = self.getBestRoom(balancer, availableRooms)
+                balancer.decrementKey(bestRoom, lesson['duration'])
+
+                lessonToRoom.update({lesson: bestRoom})
 
         for lesson, roomAssignment in lessonToRoom.items():
-            util.updateLessonFields(lesson, {
-                'status': util.status['secured'],
-                'building': roomAssignment.split(' - ')[0],
-                'room': roomAssignment.split(' - ')[1]
-            })
+            lesson['location'] = roomAssignment
 
         return lessonToRoom.keys()
-
-    # creates a pq using MRV heuristic
     def buildLessonHeap(lessons, at):
         import heapq as hq
 
@@ -56,12 +57,11 @@ class RoomSolver:
             hq.heappush((priority, (lesson, rooms)))
     
         return heap
-
     def getBestRoom(balancer, rooms):
 
         bestRoom, capacityRemaining = None, None
         temp = []
-        while balancer.size() > 0 and bestRoom not in availableRooms:
+        while balancer.size() > 0 and bestRoom not in rooms:
             bestRoom, capacityRemaining = balancer.topItem()
             temp.append((bestRoom, capacityRemaining))
             balancer.popItem()
@@ -69,13 +69,13 @@ class RoomSolver:
         for room, capacity in temp:
             balancer.addItem(room, capacity)
 
-        if room in availableRooms:
+        if room in rooms:
             return room
         else:
             ### I don't know how we get here, so probably should throw an error
-            raise Exception(f'Did not find any of {availableRooms} inside load balancer; logic error')
+            raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
 
-
+    # CSP for assigning conflicted lessons rooms. uses AC3 & forward checking heuristics to reduce search space
     def distributeConflictedLessons(self):
 
         variables = [lesson for lesson in self.lessons if lesson['status'] is util.status['conflicted']]
@@ -87,8 +87,6 @@ class RoomSolver:
         roomAssignments = self.backtrackAlgorithm(assignment={}, variables=reducedDomains.keys(), variableToDomains=reducedDomains)
         mapping = self.updateLessonObjects(roomAssignments)
         return mapping
-    
-    # implementation of basic AC3
     def domainReduction(self, domains):
         variables = domains.keys()
         rooms = self.at
@@ -106,12 +104,11 @@ class RoomSolver:
                 
             if updateArcs:
                 updateArcs = False
-                for vz in variables:                    # gets shared rooms via set intersection
-                    if (vz != vx) and (vz != vy) and set(rooms[vx]) & set(rooms[vz]):
+                for vz in variables:
+                    if (vz != vx) and (vz != vy) and any(room in rooms[vz] for room in rooms[vx]):
                         work.append((vz, vx))
         
         return domains
-
     def backtrackAlgorithm(self, assignment, variables, variableToDomains):
 
         if len(assignment) == len(variables):
@@ -137,14 +134,12 @@ class RoomSolver:
                         return result
 
         return None
-    
     def satisfiesConstraint(self, domainA, domainB):
             startA, durationA, roomA = domainA
             startB, durationB, roomB = domainB
             endA, endB = startA + durationA, startB + durationB
 
             return not (roomA == roomB and startA < endB and startB < endA)
-    
     def forwardCheck(self, domain, unassigned):
 
         for v, domains in unassigned.items():
@@ -156,7 +151,8 @@ class RoomSolver:
                 unassigned[v] = validDomains
         
         return True
-            
+
+    # helper function that sets a lesson's fields after being assigned a room
     def updateLessonObjects(self, mapping):
 
         for lesson, room in mapping:

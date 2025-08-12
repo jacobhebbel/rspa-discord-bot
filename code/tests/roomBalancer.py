@@ -16,10 +16,10 @@ def testInit():
 def testAddItem():
 
     data = {
-        'Room A': timedelta(hours=5),
-        'Room B': timedelta(hours=4),
-        'Room C': timedelta(hours=3),
-        'Room D': timedelta(hours=2)
+        'Room A': timedelta(hours=5).seconds,
+        'Room B': timedelta(hours=4).seconds,
+        'Room C': timedelta(hours=3).seconds,
+        'Room D': timedelta(hours=2).seconds
             }
     
     rb = RB(data)
@@ -29,10 +29,10 @@ def testAddItem():
 
 def testPopItem():
     data = {
-        'Room A': timedelta(hours=5),
-        'Room B': timedelta(hours=4),
-        'Room C': timedelta(hours=3),
-        'Room D': timedelta(hours=2)
+        'Room A': timedelta(hours=5).seconds,
+        'Room B': timedelta(hours=4).seconds,
+        'Room C': timedelta(hours=3).seconds,
+        'Room D': timedelta(hours=2).seconds
             }
     
     rb = RB(data)
@@ -43,10 +43,10 @@ def testPopItem():
 def testIncrementKey():
     
     data = {
-        'Room A': timedelta(hours=5),
-        'Room B': timedelta(hours=4),
-        'Room C': timedelta(hours=3),
-        'Room D': timedelta(hours=2)
+        'Room A': timedelta(hours=5).seconds,
+        'Room B': timedelta(hours=4).seconds,
+        'Room C': timedelta(hours=3).seconds,
+        'Room D': timedelta(hours=2).seconds
             }
     
     rb = RB(data)

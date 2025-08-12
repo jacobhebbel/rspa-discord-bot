@@ -4,7 +4,7 @@ from datetime import timedelta
 class RoomBalancer:
 
     def __init__(self, roomToTimeBooked):
-        self.heap = [(timeBooked.seconds, room) for room, timeBooked in roomToTimeBooked.items()]
+        self.heap = [(timeBooked, room) for room, timeBooked in roomToTimeBooked.items()]
         heapq.heapify(self.heap)
         
     def isEmpty(self):

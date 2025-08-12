@@ -20,7 +20,7 @@ class Lesson:
             if field == 'building' or field == 'room':
                 self.location.append(value)
             
-            elif field == 'datetime':
+            elif field == 'start':
                 self.start = datetime.fromisoformat(value)
             
             elif field == 'duration':
@@ -65,7 +65,7 @@ class Lesson:
     def datetimeConflict(self, other):
         # returns t/f if this lesson conflicts with another
         thisDate, otherDate = self.start.date(), other.start.date()
-        return (thisDate == otherDate) and ((self.start < other.start and self.end > other.start) or (other.start < self.start and other.end > self.start))
+        return (thisDate == otherDate) and ((self.start <= other.start and self.end >= other.start) or (other.start <= self.start and other.end >= self.start))
 
     def roomConflict(self, lesson):
         # returns t/f if this lesson conflicts with another

@@ -11,26 +11,29 @@ def testInit():
     
     doc1 = {
         'date': datetime(2000, 1, 1).isoformat(),
-        'rooms': ['WH - 323', 'RU - 5502', 'DCC - 327A'],
+        'rooms': ['WH - 323', 'RU - 5502', 'DCC - 327A', 'WH - 110'],
         'isCurrent': True,
         'schedules': {
             'WH - 323': [
-                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=30).seconds}, 
-                {'start': datetime(2000, 1, 1, 12).isoformat(), 'duration': timedelta(minutes=120).seconds},
-                {'start': datetime(2000, 1, 1, 20).isoformat(), 'duration': timedelta(minutes=90).seconds}
+                {'start': datetime(2000, 1, 1, 9, 30).isoformat(),'duration': timedelta(minutes=150).seconds}, 
+                {'start': datetime(2000, 1, 1, 14).isoformat(), 'duration': timedelta(minutes=240).seconds}
             ],
             'RU - 5502': [
-                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=120).seconds}
+                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=1440).seconds}
             ],
             'DCC - 327A': [
-                {'start': datetime(2000, 1, 1, 13).isoformat(),'duration': timedelta(minutes=35).seconds},
-                {'start': datetime(2000, 1, 1, 17, 50).isoformat(), 'duration': timedelta(minutes=130).seconds},
-            ]   
+                {'start': datetime(2000, 1, 1, 18).isoformat(),'duration': timedelta(minutes=120).seconds}
+            ],
+            'WH - 110': [
+                {'start': datetime(2000, 1, 1, 10, 30).isoformat(), 'duration': timedelta(minutes=30).seconds},
+                {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(minutes=90).seconds}
+            ]
         },
         'capacities': {
-            'WH - 323': 240*60,
-            'RU - 5502': 120*60,
-            'DCC - 327A': 165*60
+            'WH - 323': timedelta(minutes=390).seconds,
+            'RU - 5502': timedelta(minutes=1440).seconds,
+            'DCC - 327A': timedelta(minutes=120).seconds,
+            'WH - 110': timedelta(minutes=120).seconds
         }
     }
     doc2 = {
@@ -95,59 +98,174 @@ def testInit():
         }
     }
 
-    lessonA = {
-        'id': '1',
-        'teacherId': 'jacob',
-        'studentId': '',
-        'hasStudent': False,
-        'packageId': '',
-        'isPackage': False,
-        'datetime': datetime(2000, 1, 1, 8, 30).isoformat(),
-        'duration': timedelta(minutes=30).seconds,
-        'building': 'West Hall',
-        'room': '323',
-        'hasRoom': True,
-        'status': util.status['secured'],
-    }
-    lessonB = {
-        'id': '2',
-        'teacherId': 'hope',
-        'studentId': '',
-        'hasStudent': False,
-        'packageId': '',
-        'isPackage': False,
-        'datetime': datetime(2000, 1, 2, 9).isoformat(),
-        'duration': timedelta(minutes=30).seconds,
-        'building': 'West Hall',
-        'room': '326',
-        'hasRoom': True,
-        'status': util.status['secured'],
-    }
-    lessonC = {
-        'id': '3',
-        'teacherId': 'Army',
-        'studentId': '',
-        'hasStudent': False,
-        'packageId': '',
-        'isPackage': False,
-        'datetime': datetime(2000, 1, 3, 8).isoformat(),
-        'duration': timedelta(minutes=60).seconds,
-        'building': 'West Hall',
-        'room': '323',
-        'hasRoom': True,
-        'status': util.status['pending'],
-    }
-    
-    rs = RoomSolver([doc1, doc2, doc3], [lessonA, lessonB, lessonC])
-
+    rs = RoomSolver([doc1, doc2, doc3])
     return True
-    
+
 
 def testAssignIncomingLesson():
-    return False
+    from scheduling.lesson import Lesson
+    roomSchedule = {
+        'date': datetime(2000, 1, 1).isoformat(),
+        'rooms': ['WH - 323', 'RU - 5502', 'DCC - 327A', 'WH - 110'],
+        'isCurrent': True,
+        'schedules': {
+            'WH - 323': [
+                {'start': datetime(2000, 1, 1, 9, 30).isoformat(),'duration': timedelta(minutes=150).seconds}, 
+                {'start': datetime(2000, 1, 1, 14).isoformat(), 'duration': timedelta(minutes=240).seconds}
+            ],
+            'RU - 5502': [
+                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=1440).seconds}
+            ],
+            'DCC - 327A': [
+                {'start': datetime(2000, 1, 1, 18).isoformat(),'duration': timedelta(minutes=120).seconds}
+            ],
+            'WH - 110': [
+                {'start': datetime(2000, 1, 1, 10, 30).isoformat(), 'duration': timedelta(minutes=30).seconds},
+                {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(minutes=90).seconds}
+            ]
+        },
+        'capacities': {
+            'WH - 323': timedelta(minutes=390).seconds,
+            'RU - 5502': timedelta(minutes=1440).seconds,
+            'DCC - 327A': timedelta(minutes=120).seconds,
+            'WH - 110': timedelta(minutes=120).seconds
+        }
+    }
+
+
+    lessonA = Lesson({   # this lesson will fit within the RU block and be considered 'secured'
+        'id': '1',
+        'teacherId': 'jacobAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 10).isoformat(),
+        'duration': timedelta(minutes=30).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['pending']
+    })
+    
+    lessonB = Lesson({   # this lesson will datetime conflict with the previous; it will be marked as 'conflicted'
+        'id': '2',
+        'teacherId': 'hopeAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 10).isoformat(),
+        'duration': timedelta(minutes=60).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['pending']
+    })
+
+    lessonC = Lesson({   # this lesson will fit within the RU block and be considered 'secured', however should be distributed to a different room
+        'id': '3',
+        'teacherId': 'armyAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 15).isoformat(),
+        'duration': timedelta(minutes=30).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['pending']
+    })
+
+    rs = RoomSolver([roomSchedule])
+    securedLessons = []
+    
+    for lesson in [lessonA, lessonB, lessonC]:
+        rs.assignIncomingLesson(lesson, securedLessons)
+        
+        if lesson['status'] == util.status['secured']:
+            securedLessons.append(lesson)  
+
+    return (lessonA['status'] == util.status['secured']
+            and lessonB['status'] == util.status['conflicted']
+            and lessonC['status'] == util.status['secured']
+        )
 
 def testDistributeSecuredLessons():
-    return False
+    from scheduling.lesson import Lesson
+    roomSchedule = {
+        'date': datetime(2000, 1, 1).isoformat(),
+        'rooms': ['WH - 323', 'RU - 5502', 'DCC - 327A', 'WH - 110'],
+        'isCurrent': True,
+        'schedules': {
+            'WH - 323': [
+                {'start': datetime(2000, 1, 1, 9, 30).isoformat(),'duration': timedelta(minutes=150).seconds}, 
+                {'start': datetime(2000, 1, 1, 14).isoformat(), 'duration': timedelta(minutes=240).seconds}
+            ],
+            'RU - 5502': [
+                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=1440).seconds}
+            ],
+            'DCC - 327A': [
+                {'start': datetime(2000, 1, 1, 18).isoformat(),'duration': timedelta(minutes=120).seconds}
+            ],
+            'WH - 110': [
+                {'start': datetime(2000, 1, 1, 10, 30).isoformat(), 'duration': timedelta(minutes=30).seconds},
+                {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(minutes=90).seconds}
+            ]
+        },
+        'capacities': {
+            'WH - 323': timedelta(minutes=390).seconds,
+            'RU - 5502': timedelta(minutes=1440).seconds,
+            'DCC - 327A': timedelta(minutes=120).seconds,
+            'WH - 110': timedelta(minutes=120).seconds
+        }
+    }
+
+
+    lessonA = Lesson({   # this lesson will fit within the RU block and be considered 'secured'
+        'id': '1',
+        'teacherId': 'jacobAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 10).isoformat(),
+        'duration': timedelta(minutes=30).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['pending']
+    })
+
+    lessonC = Lesson({   # this lesson will fit within the RU block and be considered 'secured', however should be distributed to a different room
+        'id': '3',
+        'teacherId': 'armyAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 15).isoformat(),
+        'duration': timedelta(minutes=30).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['pending']
+    })
+
+    rs = RoomSolver([roomSchedule])
+    securedLessons = []
+    
+    for lesson in [lessonA, lessonB, lessonC]:
+        rs.assignIncomingLesson(lesson, securedLessons)
+        
+        if lesson['status'] == util.status['secured']:
+            securedLessons.append(lesson)  
+
+    return (lessonA['status'] == util.status['secured']
+            and lessonB['status'] == util.status['conflicted']
+            and lessonC['status'] == util.status['secured']
+        )
 
 def testDistributeConflictedLessons():
     return False

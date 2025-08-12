@@ -2,38 +2,37 @@ import util
 
 class RoomSolver:
 
-    def __init__(self, data, lessons):
-        from scheduling.lesson import Lesson
+    def __init__(self, data):
         from scheduling.roomBalancer import RoomBalancer
         from scheduling.availabilityTable import AvailabilityTable as AT
-        
-        self.lessons = [Lesson(lesson) for lesson in lessons]
+
         self.at = AT(data)
         self.dateToRBs = {doc['date']: RoomBalancer(doc['capacities']) for doc in data}
 
 
     # marks as secured / conflicted if it has a datetime conflict or not
-    def assignIncomingLesson(self, incoming):
+    def assignIncomingLesson(self, incoming, securedLessons):
+
         from scheduling.lesson import Lesson
         if not isinstance(incoming, Lesson):
-            incoming = Lesson(incoming)
+            raise Exception('assignIncomingLesson arg must be type lesson, is type', type(incoming))
         
-        conflictingLessons = [lesson for lesson in self.lessons if (lesson['status'] is util.status['secured']) and incoming.conflictsWith(lesson)]
-        return conflictingLessons == []
+        if securedLessons == []:
+            incoming['status'] = util.status['secured']
+        else:
+            conflictingLessons = [lesson for lesson in securedLessons if incoming.datetimeConflict(lesson)]
+            incoming['status'] = util.status['secured'] if conflictingLessons == [] else util.status['conflicted']
 
     # greedily assigns lessons to room availabilities using room balancers to even out usage
-    def distributeSecuredLessons(self):
+    def distributeSecuredLessons(self, securedLessons):
         import heapq as hq
 
-        securedLessons = [lesson for lesson in self.lessons if lesson['status'] is util.status['secured']]
         availabilityTable = self.at
         lessonToRoom = {}
         
-        
         for date in availabilityTable.keys():
 
-            todaysLessons = [lesson for lesson in securedLessons if lesson['start'].date() == date]
-            work = self.buildLessonHeap(todaysLessons, availabilityTable)
+            work = self.buildLessonHeap(securedLessons, availabilityTable)
             balancer = self.dateToRBs[date]
         
             while work:
@@ -76,9 +75,9 @@ class RoomSolver:
             raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
 
     # CSP for assigning conflicted lessons rooms. uses AC3 & forward checking heuristics to reduce search space
-    def distributeConflictedLessons(self):
+    def distributeConflictedLessons(self, conflictedLessons):
 
-        variables = [lesson for lesson in self.lessons if lesson['status'] is util.status['conflicted']]
+        variables = [lesson for lesson in conflictedLessons if lesson['status'] is util.status['conflicted']]
         
         domains = self.at
         variableToDomains = {v: [(v['start'], v['duration'], room) for room in domains[v]] for v in variables}

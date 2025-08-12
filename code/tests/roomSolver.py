@@ -101,7 +101,6 @@ def testInit():
     rs = RoomSolver([doc1, doc2, doc3])
     return True
 
-
 def testAssignIncomingLesson():
     from scheduling.lesson import Lesson
     roomSchedule = {
@@ -200,18 +199,18 @@ def testDistributeSecuredLessons():
         'isCurrent': True,
         'schedules': {
             'WH - 323': [
-                {'start': datetime(2000, 1, 1, 9, 30).isoformat(),'duration': timedelta(minutes=150).seconds}, 
-                {'start': datetime(2000, 1, 1, 14).isoformat(), 'duration': timedelta(minutes=240).seconds}
+                {'start': datetime(2000, 1, 1, 9, 30).isoformat(),'duration': timedelta(hours=2, minutes=30).seconds}, 
+                {'start': datetime(2000, 1, 1, 14).isoformat(), 'duration': timedelta(hours=4).seconds}
             ],
             'RU - 5502': [
-                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=1440).seconds}
+                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=6).seconds}
             ],
             'DCC - 327A': [
-                {'start': datetime(2000, 1, 1, 18).isoformat(),'duration': timedelta(minutes=120).seconds}
+                {'start': datetime(2000, 1, 1, 18).isoformat(),'duration': timedelta(hours=2).seconds}
             ],
             'WH - 110': [
                 {'start': datetime(2000, 1, 1, 10, 30).isoformat(), 'duration': timedelta(minutes=30).seconds},
-                {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(minutes=90).seconds}
+                {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(hours=1, minutes=30).seconds}
             ]
         },
         'timeBooked': {
@@ -274,7 +273,7 @@ def testDistributeSecuredLessons():
 
     rs = RoomSolver([roomSchedule])
     securedLessons = [lessonA, lessonB, lessonC]
-    
+    print(securedLessons)
     rs.distributeSecuredLessons(securedLessons)
     
     for lesson in securedLessons:
@@ -288,6 +287,7 @@ def testDistributeConflictedLessons():
 def main():
 
     results = [testInit(), testAssignIncomingLesson(), testDistributeSecuredLessons(), testDistributeConflictedLessons()]
+    print(results)
     util.printTestResults(results)
 
 if __name__ == '__main__':

@@ -23,7 +23,6 @@ def printTestResults(results):
         color = GREEN if res else RED
         status = 'pass' if res else 'fail'
         print(f'Result of Test {i + 1}:\t{color}{status}{RESET}')
-
 def getDatabaseConnection(collection):
     global db
 
@@ -54,7 +53,6 @@ def lessonToDatetime(lesson):
 
 def lessonToTimedelta(lesson):
     from datetime import timedelta
-
     return timedelta(hours=1) if lesson['isFullHour'] else timedelta(minutes=30)
 
 def lessonsConflict(lessonA, lessonB):

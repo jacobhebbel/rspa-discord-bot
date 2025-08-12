@@ -31,6 +31,9 @@ class RoomSolver:
         availabilityTable = self.at
         lessonToRoom = {}
         
+        for lesson in securedLessons:
+            print(f'Lesson at {lesson['start']} has these rooms available: {availabilityTable[lesson]}')
+
         for date in (availabilityTable.roomData).keys():
 
             work = self.buildLessonHeap(securedLessons, availabilityTable)

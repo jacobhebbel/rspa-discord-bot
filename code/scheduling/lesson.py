@@ -1,4 +1,4 @@
-from datetime import datetime, date, time, timedelta 
+from datetime import datetime, timedelta 
 class Lesson:
 
     def __init__(self, args: dict):
@@ -65,8 +65,8 @@ class Lesson:
     def datetimeConflict(self, other):
         # returns t/f if this lesson conflicts with another
         thisDate, otherDate = self.start.date(), other.start.date()
-        return (thisDate == otherDate) and ((self.start <= other.start and self.end >= other.start) or (other.start <= self.start and other.end >= self.start))
-
+        return (thisDate == otherDate) and not (self.end <= other.start or other.end <= self.start)
+    
     def roomConflict(self, lesson):
         # returns t/f if this lesson conflicts with another
         return self.location == lesson.location

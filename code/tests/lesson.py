@@ -8,14 +8,8 @@ from scheduling.availability import Availability
 Each lesson object is initialized with a dictionary similar to the result of calling mongo for a lesson document
 '''
 
-global lessonA
-global lessonB
-global lessonC
-
+global lessonA, lessonB, lessonC
 lessonA, lessonB, lessonC = None, None, None
-
-
-
 
 def testInit():
     global lessonA, lessonB, lessonC
@@ -27,7 +21,7 @@ def testInit():
         'hasStudent': False,
         'packageId': '',
         'isPackage': False,
-        'datetime': datetime(2000, 1, 1, 8, 30).isoformat(),
+        'start': datetime(2000, 1, 1, 8, 30).isoformat(),
         'duration': timedelta(minutes=30).seconds,
         'building': 'West Hall',
         'room': '323',
@@ -42,7 +36,7 @@ def testInit():
         'hasStudent': False,
         'packageId': '',
         'isPackage': False,
-        'datetime': datetime(2000, 1, 1, 9).isoformat(),
+        'start': datetime(2000, 1, 1, 9).isoformat(),
         'duration': timedelta(minutes=30).seconds,
         'building': 'West Hall',
         'room': '326',
@@ -57,7 +51,7 @@ def testInit():
         'hasStudent': False,
         'packageId': '',
         'isPackage': False,
-        'datetime': datetime(2000, 1, 1, 8).isoformat(),
+        'start': datetime(2000, 1, 1, 8).isoformat(),
         'duration': timedelta(minutes=60).seconds,
         'building': 'West Hall',
         'room': '323',
@@ -77,11 +71,14 @@ def testIndex():
     observed = copyA['location']
     return expected == observed
 
-
 def testDatetimeConflict():
     global lessonA, lessonB, lessonC
-
     doesConflict, doesNotConflict = True, False
+
+    print(lessonA.datetimeConflict(lessonB) == doesNotConflict)
+    print(lessonB.datetimeConflict(lessonA) == doesNotConflict)
+    print(lessonA.datetimeConflict(lessonC) == doesConflict)
+    print(lessonC.datetimeConflict(lessonA) == doesConflict)
 
     return (
         (lessonA.datetimeConflict(lessonB) == doesNotConflict) and (lessonB.datetimeConflict(lessonA) == doesNotConflict) and 

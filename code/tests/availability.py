@@ -11,23 +11,21 @@ Each Availability object is initialized from a subsection of a dated schedule do
 global availability
 availability = None
 
-global lessonA
-global lessonB
-global lessonC
+global lessonA, lessonB, lessonC
 lessonA, lessonB, lessonC = None, None, None
 lessonA = Lesson({
-'id': '1',
-'teacherId': 'jacob',
-'studentId': '',
-'hasStudent': False,
-'packageId': '',
-'isPackage': False,
-'datetime': datetime(2000, 1, 1, 8, 30).isoformat(),
-'duration': timedelta(minutes=30).seconds,
-'building': 'West Hall',
-'room': '323',
-'hasRoom': True,
-'status': util.status['secured'],
+    'id': '1',
+    'teacherId': 'jacob',
+    'studentId': '',
+    'hasStudent': False,
+    'packageId': '',
+    'isPackage': False,
+    'start': datetime(2000, 1, 1, 8, 30).isoformat(),
+    'duration': timedelta(minutes=30).seconds,
+    'building': 'West Hall',
+    'room': '323',
+    'hasRoom': True,
+    'status': util.status['secured'],
 })
 
 lessonB = Lesson({
@@ -37,7 +35,7 @@ lessonB = Lesson({
     'hasStudent': False,
     'packageId': '',
     'isPackage': False,
-    'datetime': datetime(2000, 1, 1, 9).isoformat(),
+    'start': datetime(2000, 1, 1, 9).isoformat(),
     'duration': timedelta(minutes=30).seconds,
     'building': 'West Hall',
     'room': '326',
@@ -52,7 +50,7 @@ lessonC = Lesson({
     'hasStudent': False,
     'packageId': '',
     'isPackage': False,
-    'datetime': datetime(2000, 1, 1, 8).isoformat(),
+    'start': datetime(2000, 1, 1, 8).isoformat(),
     'duration': timedelta(minutes=60).seconds,
     'building': 'West Hall',
     'room': '323',

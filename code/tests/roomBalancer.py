@@ -1,7 +1,8 @@
 from scheduling.roomBalancer import RoomBalancer as RB
 import util
+from datetime import timedelta
 
-def testInitialization():
+def testInit():
     from datetime import timedelta
     data = {
         'Room A': timedelta(hours=5),
@@ -9,63 +10,54 @@ def testInitialization():
         'Room C': timedelta(seconds=1)
             }
     
-    flag = True
-    try:
-        rb = RB(data)
-    except:
-        flag = False
-    finally:
-        return flag
+    rb = RB(data)
+    return True
 
-def testOrdering():
-    from datetime import timedelta
+def testAddItem():
+
     data = {
-        'Room A': timedelta(seconds=1),
-        'Room B': timedelta(minutes=1),
-        'Room C': timedelta(hours=1)
+        'Room A': timedelta(hours=5),
+        'Room B': timedelta(hours=4),
+        'Room C': timedelta(hours=3),
+        'Room D': timedelta(hours=2)
             }
     
-    flag = True
     rb = RB(data)
 
-    room, capacity = rb.topItem()
-    rb.pop()
+    rb.addItem('Room E', timedelta(hours=1))
+    return rb.topItem() == ('Room E', timedelta(hours=1))
 
-    if (room != 'Room C') or (capacity != timedelta(hours=1)):
-        flag = False
-
-    room, capacity = rb.topItem()
-    rb.pop()
-
-    if (room != 'Room B') or (capacity != timedelta(minutes=1)):
-        flag = False
-
-    room, capacity = rb.topItem()
-    rb.pop()
-
-    if (room != 'Room A') or (capacity != timedelta(seconds=1)):
-        flag = False
-
-    return flag
-
-def testDecrementKey():
-    from datetime import timedelta
+def testPopItem():
     data = {
-        'Room A': timedelta(seconds=1),
-        'Room B': timedelta(minutes=1),
-        'Room C': timedelta(hours=1)
-    }
+        'Room A': timedelta(hours=5),
+        'Room B': timedelta(hours=4),
+        'Room C': timedelta(hours=3),
+        'Room D': timedelta(hours=2)
+            }
+    
+    rb = RB(data)
+    rb.popItem()
+
+    return rb.topItem() == ('Room C', timedelta(hours=3))
+
+def testIncrementKey():
+    
+    data = {
+        'Room A': timedelta(hours=5),
+        'Room B': timedelta(hours=4),
+        'Room C': timedelta(hours=3),
+        'Room D': timedelta(hours=2)
+            }
     
     rb = RB(data)
 
-    rb.decrementKey('Room C', timedelta(minutes=30))
-    room, capacity = rb.topItem()
-    return capacity == timedelta(minutes=30)
-
+    rb.incrementKey('Room D', timedelta(minutes=30))
+    print(rb.topItem())
+    return rb.topItem() == ('Room D', timedelta(hours=2, minutes=30))
 
 def main():
 
-    results = [testInitialization(), testOrdering(), testDecrementKey()]
+    results = [testInit(), testAddItem(), testPopItem(), testIncrementKey()]
     util.printTestResults(results)
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ class AvailabilityTable:
         self.preprocessData(initialData)
 
     def __str__(self):
-        return str(self.data)
+        return str(self.roomData)
 
     def preprocessData(self, data):
         documentsFromMongo = data

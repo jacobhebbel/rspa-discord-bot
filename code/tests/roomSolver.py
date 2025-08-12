@@ -29,7 +29,7 @@ def testInit():
                 {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(minutes=90).seconds}
             ]
         },
-        'capacities': {
+        'timeBooked': {
             'WH - 323': timedelta(minutes=390).seconds,
             'RU - 5502': timedelta(minutes=1440).seconds,
             'DCC - 327A': timedelta(minutes=120).seconds,
@@ -61,7 +61,7 @@ def testInit():
                 {'start': datetime(2000, 1, 2, 13).isoformat(), 'duration': timedelta(minutes=35).seconds}
             ]
         },
-        'capacities': {
+        'timeBooked': {
             'WH - 326': 240*60,
             'WH - 327': 85*60,
             'DCC - 327A': 210*60,
@@ -90,7 +90,7 @@ def testInit():
                 {'start': datetime(2000, 1, 3, 8).isoformat(), 'duration': timedelta(hours=14).seconds}
             ]
         },
-        'capacities': {
+        'timeBooked': {
             'WH - 110': 85*60,
             'WH - 326': 95*60,
             'DCC - 327B': 165*60,
@@ -124,7 +124,7 @@ def testAssignIncomingLesson():
                 {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(minutes=90).seconds}
             ]
         },
-        'capacities': {
+        'timeBooked': {
             'WH - 323': timedelta(minutes=390).seconds,
             'RU - 5502': timedelta(minutes=1440).seconds,
             'DCC - 327A': timedelta(minutes=120).seconds,
@@ -214,16 +214,20 @@ def testDistributeSecuredLessons():
                 {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(minutes=90).seconds}
             ]
         },
-        'capacities': {
-            'WH - 323': timedelta(minutes=390).seconds,
-            'RU - 5502': timedelta(minutes=1440).seconds,
-            'DCC - 327A': timedelta(minutes=120).seconds,
-            'WH - 110': timedelta(minutes=120).seconds
+        'timeBooked': {
+            'WH - 323': timedelta(minutes=0).seconds,
+            'RU - 5502': timedelta(minutes=0).seconds,
+            'DCC - 327A': timedelta(minutes=0).seconds,
+            'WH - 110': timedelta(minutes=0).seconds
         }
     }
 
+    # none of these lessons will datetime conflict.
+    # the objective is to distribute them evenly across their available rooms
+    # such as to minimize the average difference in hoursBooked across the options
+    # this optimization will favor equal use of all rooms instead of overbooking RU
 
-    lessonA = Lesson({   # this lesson will fit within the RU block and be considered 'secured'
+    lessonA = Lesson({
         'id': '1',
         'teacherId': 'jacobAsInt',
         'studentId': '',
@@ -235,10 +239,25 @@ def testDistributeSecuredLessons():
         'building': '',
         'room': '',
         'hasRoom': False,
-        'status': util.status['pending']
+        'status': util.status['secured']
+    })
+    
+    lessonB = Lesson({
+        'id': '2',
+        'teacherId': 'hopeAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 11).isoformat(),
+        'duration': timedelta(minutes=60).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['secured']
     })
 
-    lessonC = Lesson({   # this lesson will fit within the RU block and be considered 'secured', however should be distributed to a different room
+    lessonC = Lesson({
         'id': '3',
         'teacherId': 'armyAsInt',
         'studentId': '',
@@ -246,26 +265,22 @@ def testDistributeSecuredLessons():
         'packageId': '',
         'isPackage': False,
         'start': datetime(2000, 1, 1, 15).isoformat(),
-        'duration': timedelta(minutes=30).seconds,
+        'duration': timedelta(minutes=60).seconds,
         'building': '',
         'room': '',
         'hasRoom': False,
-        'status': util.status['pending']
+        'status': util.status['secured']
     })
 
     rs = RoomSolver([roomSchedule])
-    securedLessons = []
+    securedLessons = [lessonA, lessonB, lessonC]
     
-    for lesson in [lessonA, lessonB, lessonC]:
-        rs.assignIncomingLesson(lesson, securedLessons)
-        
-        if lesson['status'] == util.status['secured']:
-            securedLessons.append(lesson)  
-
-    return (lessonA['status'] == util.status['secured']
-            and lessonB['status'] == util.status['conflicted']
-            and lessonC['status'] == util.status['secured']
-        )
+    rs.distributeSecuredLessons(securedLessons)
+    
+    for lesson in securedLessons:
+        print(f'{lesson['building']} - {lesson['room']}')
+    
+    return lessonA['hasRoom'] and lessonB['hasRoom'] and lessonC['hasRoom']
 
 def testDistributeConflictedLessons():
     return False

@@ -5,9 +5,10 @@ class RoomSolver:
     def __init__(self, data):
         from scheduling.roomBalancer import RoomBalancer
         from scheduling.availabilityTable import AvailabilityTable as AT
+        from datetime import datetime
 
         self.at = AT(data)
-        self.dateToRBs = {doc['date']: RoomBalancer(doc['capacities']) for doc in data}
+        self.dateToRBs = {datetime.fromisoformat(doc['date']).date(): RoomBalancer(doc['timeBooked']) for doc in data}
 
 
     # marks as secured / conflicted if it has a datetime conflict or not
@@ -30,16 +31,16 @@ class RoomSolver:
         availabilityTable = self.at
         lessonToRoom = {}
         
-        for date in availabilityTable.keys():
+        for date in (availabilityTable.roomData).keys():
 
             work = self.buildLessonHeap(securedLessons, availabilityTable)
             balancer = self.dateToRBs[date]
         
             while work:
-                lesson, availableRooms = hq.heappop(work)
+                priority, lesson, availableRooms = hq.heappop(work)
 
                 bestRoom = self.getBestRoom(balancer, availableRooms)
-                balancer.decrementKey(bestRoom, lesson['duration'])
+                balancer.incrementKey(bestRoom, lesson['duration'])
 
                 lessonToRoom.update({lesson: bestRoom})
 
@@ -47,26 +48,25 @@ class RoomSolver:
             lesson['location'] = roomAssignment
 
         return lessonToRoom.keys()
-    def buildLessonHeap(lessons, at):
+    def buildLessonHeap(self, lessons: list, at):
         import heapq as hq
 
-        heap = hq.heapify([])
-        for lesson in lessons[:]:
-            priority, rooms = len(rooms), at[lesson]
-            hq.heappush((priority, (lesson, rooms)))
-    
-        return heap
-    def getBestRoom(balancer, rooms):
+        heap = [((len(at[lessonObj]), idx), lessonObj, at[lessonObj]) for idx, lessonObj in enumerate(lessons)]
+        hq.heapify(heap)
 
-        bestRoom, capacityRemaining = None, None
+        return heap
+    
+    def getBestRoom(self, balancer, rooms):
+
+        bestRoom, hoursBooked = None, None
         temp = []
-        while balancer.size() > 0 and bestRoom not in rooms:
-            bestRoom, capacityRemaining = balancer.topItem()
-            temp.append((bestRoom, capacityRemaining))
+        while not balancer.isEmpty() and bestRoom not in rooms:
+            hoursBooked, bestRoom = balancer.topItem()
+            temp.append((hoursBooked, bestRoom))
             balancer.popItem()
         
-        for room, capacity in temp:
-            balancer.addItem(room, capacity)
+        for room, hoursBooked in temp:
+            balancer.addItem(room, hoursBooked)
 
         if room in rooms:
             return room

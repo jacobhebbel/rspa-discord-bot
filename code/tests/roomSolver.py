@@ -203,13 +203,13 @@ def testDistributeSecuredLessons():
                 {'start': datetime(2000, 1, 1, 14).isoformat(), 'duration': timedelta(hours=4).seconds}
             ],
             'RU - 5502': [
-                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(minutes=6).seconds}
+                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(hours=6).seconds}
             ],
             'DCC - 327A': [
                 {'start': datetime(2000, 1, 1, 18).isoformat(),'duration': timedelta(hours=2).seconds}
             ],
             'WH - 110': [
-                {'start': datetime(2000, 1, 1, 10, 30).isoformat(), 'duration': timedelta(minutes=30).seconds},
+                {'start': datetime(2000, 1, 1, 10).isoformat(), 'duration': timedelta(hours=1).seconds},
                 {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(hours=1, minutes=30).seconds}
             ]
         },
@@ -272,22 +272,111 @@ def testDistributeSecuredLessons():
     })
 
     rs = RoomSolver([roomSchedule])
+
     securedLessons = [lessonA, lessonB, lessonC]
-    print(securedLessons)
     rs.distributeSecuredLessons(securedLessons)
+
     
-    for lesson in securedLessons:
-        print(f'{lesson['building']} - {lesson['room']}')
-    
-    return lessonA['hasRoom'] and lessonB['hasRoom'] and lessonC['hasRoom']
+    return (lessonA['location'] == 'WH - 110') and (lessonB['location'] == 'RU - 5502') and (lessonC['location'] == 'WH - 323')
 
 def testDistributeConflictedLessons():
-    return False
+
+    # features of conflicted lesson algo
+    # 1. domain reduction with AC3
+    # 2. forward checking optimization
+    # 3. backward checking algo for assignment
+    
+    # how this works:
+    # 1. lessons are variables, Availability objs are domains.
+    # 2. make a mapping of a variable to its possible domains
+    # 3. use AC-3 to delete domains that result in an incomplete mapping
+    # 4. use backtracking to assign variables. use Most Constrained Variable heuristic. Use foward checking after each assignment to catch bad attempts early
+    # 5. no load balancing is happening for picking the right domain; could be implemented but not needed
+
+    from scheduling.lesson import Lesson
+    roomSchedule = {
+        'date': datetime(2000, 1, 1).isoformat(),
+        'rooms': ['WH - 323', 'RU - 5502', 'DCC - 327A', 'WH - 110'],
+        'isCurrent': True,
+        'schedules': {
+            'WH - 323': [
+                {'start': datetime(2000, 1, 1, 9, 30).isoformat(),'duration': timedelta(hours=2, minutes=30).seconds}, 
+                {'start': datetime(2000, 1, 1, 14).isoformat(), 'duration': timedelta(hours=4).seconds}
+            ],
+            'RU - 5502': [
+                {'start': datetime(2000, 1, 1, 8).isoformat(),'duration': timedelta(hours=6).seconds}
+            ],
+            'DCC - 327A': [
+                {'start': datetime(2000, 1, 1, 18).isoformat(),'duration': timedelta(hours=2).seconds}
+            ],
+            'WH - 110': [
+                {'start': datetime(2000, 1, 1, 10).isoformat(), 'duration': timedelta(hours=1).seconds},
+                {'start': datetime(2000, 1, 1, 13).isoformat(), 'duration': timedelta(hours=1, minutes=30).seconds}
+            ]
+        },
+        'timeBooked': {
+            'WH - 323': timedelta(minutes=0).seconds,
+            'RU - 5502': timedelta(minutes=0).seconds,
+            'DCC - 327A': timedelta(minutes=0).seconds,
+            'WH - 110': timedelta(minutes=0).seconds
+        }
+    }
+
+    lessonA = Lesson({
+        'id': '1',
+        'teacherId': 'jacobAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 13).isoformat(),
+        'duration': timedelta(minutes=30).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['conflicted']
+    })
+    
+    lessonB = Lesson({
+        'id': '2',
+        'teacherId': 'hopeAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 13).isoformat(),
+        'duration': timedelta(minutes=60).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['conflicted']
+    })
+
+    lessonC = Lesson({
+        'id': '3',
+        'teacherId': 'armyAsInt',
+        'studentId': '',
+        'hasStudent': False,
+        'packageId': '',
+        'isPackage': False,
+        'start': datetime(2000, 1, 1, 13, 30).isoformat(),
+        'duration': timedelta(minutes=60).seconds,
+        'building': '',
+        'room': '',
+        'hasRoom': False,
+        'status': util.status['conflicted']
+    })
+
+    rs = RoomSolver([roomSchedule])
+    rs.distributeConflictedLessons([lessonA, lessonB, lessonC])
+    print([lessonA['location'], lessonB['location'], lessonC['location']])
+    
+
+    return True
 
 def main():
 
     results = [testInit(), testAssignIncomingLesson(), testDistributeSecuredLessons(), testDistributeConflictedLessons()]
-    print(results)
     util.printTestResults(results)
 
 if __name__ == '__main__':

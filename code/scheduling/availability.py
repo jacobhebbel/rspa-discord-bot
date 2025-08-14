@@ -12,6 +12,11 @@ class Availability:
         self.duration = timedelta(seconds=int(self.duration))
         self.end = self.start + self.duration
 
+    def __str__(self):
+        return str((self.location, self.start, self.end))
+    
+    def __repr__(self):
+        return self.__str__()
 
     def __getitem__(self, index):
         if index not in self.INVARIANT_FIELDS:

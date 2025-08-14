@@ -31,14 +31,11 @@ class RoomSolver:
         availabilityTable = self.at
         lessonToRoom = {}
         
-        for lesson in securedLessons:
-            print(f'Lesson at {lesson['start']} has these rooms available: {availabilityTable[lesson]}')
-
         for date in (availabilityTable.roomData).keys():
-
+            
             work = self.buildLessonHeap(securedLessons, availabilityTable)
             balancer = self.dateToRBs[date]
-        
+
             while work:
                 priority, lesson, availableRooms = hq.heappop(work)
 
@@ -46,49 +43,49 @@ class RoomSolver:
                 balancer.incrementKey(bestRoom, lesson['duration'])
 
                 lessonToRoom.update({lesson: bestRoom})
-
-        for lesson, roomAssignment in lessonToRoom.items():
-            lesson['location'] = roomAssignment
-
-        return lessonToRoom.keys()
+        self.updateLessonObjects(lessonToRoom)
     def buildLessonHeap(self, lessons: list, at):
         import heapq as hq
 
-        heap = [((len(at[lessonObj]), idx), lessonObj, at[lessonObj]) for idx, lessonObj in enumerate(lessons)]
+        heap = [((len(at[lessonObj]), idx), lessonObj, at[lessonObj]) for idx, lessonObj in enumerate(lessons[:])]
         hq.heapify(heap)
 
-        return heap
-    
-    def getBestRoom(self, balancer, rooms):
+        return heap  
+    def getBestRoom(self, balancer, availableRooms):
 
-        bestRoom, hoursBooked = None, None
+        bestRoom, timeBooked = None, None
         temp = []
-        while not balancer.isEmpty() and bestRoom not in rooms:
-            hoursBooked, bestRoom = balancer.topItem()
-            temp.append((hoursBooked, bestRoom))
-            balancer.popItem()
-        
-        for room, hoursBooked in temp:
-            balancer.addItem(room, hoursBooked)
 
-        if room in rooms:
-            return room
+        while not balancer.isEmpty():
+            bestRoom, hoursBooked = balancer.topItem()
+
+            if bestRoom in availableRooms:
+                break
+            else:
+                temp.append((bestRoom, hoursBooked))
+                balancer.popItem()
+
+        # don't add the bestRoom to temp; updating its priority is handled by incrementKey
+        for room, timeBooked in temp:
+            balancer.addItem(room, timeBooked)
+
+        if bestRoom in availableRooms:
+            return bestRoom
         else:
             ### I don't know how we get here, so probably should throw an error
-            raise Exception(f'Did not find any of {rooms} inside load balancer; logic error')
+            raise Exception(f'Did not find any of {availableRooms} inside load balancer; logic error')
 
     # CSP for assigning conflicted lessons rooms. uses AC3 & forward checking heuristics to reduce search space
     def distributeConflictedLessons(self, conflictedLessons):
-
         variables = [lesson for lesson in conflictedLessons if lesson['status'] is util.status['conflicted']]
         
         domains = self.at
         variableToDomains = {v: [(v['start'], v['duration'], room) for room in domains[v]] for v in variables}
-        
+        #print(variableToDomains)
+
         reducedDomains = self.domainReduction(variableToDomains)
         roomAssignments = self.backtrackAlgorithm(assignment={}, variables=reducedDomains.keys(), variableToDomains=reducedDomains)
-        mapping = self.updateLessonObjects(roomAssignments)
-        return mapping
+        self.updateLessonObjects(roomAssignments)
     def domainReduction(self, domains):
         variables = domains.keys()
         rooms = self.at
@@ -157,8 +154,9 @@ class RoomSolver:
     # helper function that sets a lesson's fields after being assigned a room
     def updateLessonObjects(self, mapping):
 
-        for lesson, room in mapping:
-            lesson['location'] = room if room is not None else ''
-            lesson['status'] = util.status['secured'] if room is not None else util.status['impossible']
+        for lesson, location in mapping.items():
+            lesson['location'] = location
+            
+            lesson['status'] = util.status['secured'] if location is not None else util.status['impossible']
 
 
